@@ -43,23 +43,14 @@ export function AuthProvider({ children }) {
       user,
       loading,
       configured: isSupabaseConfigured,
-      signInWithPassword: (email, password) =>
-        supabase
-          ? supabase.auth.signInWithPassword({ email, password })
-          : Promise.resolve(NOT_CONFIGURED),
-      signUp: (email, password) =>
-        supabase
-          ? supabase.auth.signUp({
-              email,
-              password,
-              options: { emailRedirectTo: `${origin}/auth/callback` },
-            })
-          : Promise.resolve(NOT_CONFIGURED),
-      signInWithOAuth: (provider) =>
+      // Google-only. OAuth covers both sign-in and first-time sign-up.
+      signInWithGoogle: (next = "/") =>
         supabase
           ? supabase.auth.signInWithOAuth({
-              provider,
-              options: { redirectTo: `${origin}/auth/callback` },
+              provider: "google",
+              options: {
+                redirectTo: `${origin}/auth/callback?redirectTo=${encodeURIComponent(next)}`,
+              },
             })
           : Promise.resolve(NOT_CONFIGURED),
       signOut: () =>
