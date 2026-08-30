@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState } from "react";
+import { AuthProvider } from "@/components/AuthProvider";
 
 /* ---------------------------------------------------------------------- */
 /*  GLOBAL CLIENT STATE                                                    */
@@ -8,7 +9,7 @@ import { createContext, useContext, useState } from "react";
 /* ---------------------------------------------------------------------- */
 const StoreContext = createContext(null);
 
-export function Providers({ children }) {
+function StoreProvider({ children }) {
   const [favs, setFavs] = useState([]);
   const [cart, setCart] = useState([]);
   const [orders, setOrders] = useState([]);
@@ -54,4 +55,13 @@ export function useStore() {
   const ctx = useContext(StoreContext);
   if (!ctx) throw new Error("useStore must be used within <Providers>");
   return ctx;
+}
+
+/* Auth wraps the store so both are available everywhere below the root layout. */
+export function Providers({ children }) {
+  return (
+    <AuthProvider>
+      <StoreProvider>{children}</StoreProvider>
+    </AuthProvider>
+  );
 }

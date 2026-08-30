@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Search, ShoppingCart, User, Home as HomeIcon, Store, ClipboardList,
-  Image as ImageIcon,
+  Image as ImageIcon, LogOut, LogIn,
 } from "lucide-react";
 import { C } from "@/lib/tokens";
 import { Logo } from "./ui";
 import { useStore } from "@/app/providers";
+import { useAuth } from "./AuthProvider";
 
 const NAV = [
   { key: "/", label: "Home", icon: HomeIcon },
@@ -22,12 +23,33 @@ export function TopNav() {
   const pathname = usePathname();
   const router = useRouter();
   const { cart } = useStore();
+  const { user, signOut } = useAuth();
   const cartCount = cart.reduce((s, i) => s + i.qty, 0);
   const [query, setQuery] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
 
   const isActive = (key) => (key === "/" ? pathname === "/" : pathname.startsWith(key));
   const submitSearch = () =>
     router.push(`/browse?q=${encodeURIComponent(query.trim())}`);
+
+  useEffect(() => setMenuOpen(false), [pathname]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onClick = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [menuOpen]);
+
+  const handleSignOut = async () => {
+    setMenuOpen(false);
+    await signOut();
+    router.push("/");
+    router.refresh();
+  };
 
   return (
     <>
@@ -80,9 +102,49 @@ export function TopNav() {
                   </span>
                 )}
               </button>
-              <button onClick={() => router.push("/login")} className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: C.primaryTint }}>
-                <User size={15} color={C.primary} />
-              </button>
+
+              {user ? (
+                <div className="relative" ref={menuRef}>
+                  <button
+                    onClick={() => setMenuOpen((o) => !o)}
+                    className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xs font-semibold"
+                    style={{ backgroundColor: C.primary, color: C.white, fontFamily: "Jost, sans-serif" }}
+                    title={user.email}
+                  >
+                    {(user.email || "?").slice(0, 1).toUpperCase()}
+                  </button>
+                  {menuOpen && (
+                    <div className="absolute right-0 mt-2 w-56 rounded-2xl p-2 z-50" style={{ backgroundColor: C.white, border: `1px solid ${C.line}`, boxShadow: "0 16px 40px -20px rgba(0,60,75,0.35)" }}>
+                      <div className="px-3 py-2">
+                        <div className="text-[0.65rem] uppercase tracking-wide" style={{ color: "#9AAEB1", fontFamily: "Jost, sans-serif" }}>Signed in as</div>
+                        <div className="text-sm truncate" style={{ color: C.ink, fontFamily: "Jost, sans-serif" }}>{user.email}</div>
+                      </div>
+                      <button
+                        onClick={() => { setMenuOpen(false); router.push("/orders"); }}
+                        className="w-full text-left px-3 py-2 rounded-xl text-sm flex items-center gap-2"
+                        style={{ color: C.primary, fontFamily: "Jost, sans-serif" }}
+                      >
+                        <ClipboardList size={14} /> My rentals
+                      </button>
+                      <button
+                        onClick={handleSignOut}
+                        className="w-full text-left px-3 py-2 rounded-xl text-sm flex items-center gap-2"
+                        style={{ color: C.highlight, fontFamily: "Jost, sans-serif" }}
+                      >
+                        <LogOut size={14} /> Sign out
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <button
+                  onClick={() => router.push(`/login?redirectTo=${encodeURIComponent(pathname)}`)}
+                  className="h-9 sm:h-10 px-3 sm:px-4 rounded-full flex items-center gap-1.5 text-xs sm:text-sm"
+                  style={{ backgroundColor: C.primaryTint, color: C.primary, fontFamily: "Jost, sans-serif", fontWeight: 500 }}
+                >
+                  <LogIn size={14} /> <span className="hidden sm:inline">Sign in</span>
+                </button>
+              )}
             </div>
           </div>
 
