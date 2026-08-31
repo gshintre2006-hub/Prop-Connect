@@ -120,6 +120,13 @@ export function TopNav() {
                         <div className="text-sm truncate" style={{ color: C.ink, fontFamily: "Jost, sans-serif" }}>{user.email}</div>
                       </div>
                       <button
+                        onClick={() => { setMenuOpen(false); router.push("/account"); }}
+                        className="w-full text-left px-3 py-2 rounded-xl text-sm flex items-center gap-2"
+                        style={{ color: C.primary, fontFamily: "Jost, sans-serif" }}
+                      >
+                        <User size={14} /> Profile
+                      </button>
+                      <button
                         onClick={() => { setMenuOpen(false); router.push("/orders"); }}
                         className="w-full text-left px-3 py-2 rounded-xl text-sm flex items-center gap-2"
                         style={{ color: C.primary, fontFamily: "Jost, sans-serif" }}

@@ -55,6 +55,11 @@ export function AuthProvider({ children }) {
           : Promise.resolve(NOT_CONFIGURED),
       signOut: () =>
         supabase ? supabase.auth.signOut() : Promise.resolve({ error: null }),
+      // Writes to the Supabase user's user_metadata (no DB table needed).
+      updateProfile: (data) =>
+        supabase
+          ? supabase.auth.updateUser({ data })
+          : Promise.resolve(NOT_CONFIGURED),
     };
   }, [supabase, user, loading]);
 

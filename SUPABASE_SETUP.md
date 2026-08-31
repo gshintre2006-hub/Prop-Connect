@@ -59,9 +59,16 @@ to wherever the user was headed.
 | `components/views/LoginView.jsx` | Google-only sign-in screen |
 | `components/TopNav.jsx` | avatar + sign-out menu when authenticated, "Sign in" otherwise |
 
+## Auth behaviour
+
+- The **whole app** is gated: signed-out visitors are sent to `/login` first,
+  then to the page they wanted (or home) after signing in.
+- `/account` (avatar menu → **Profile**) shows the Google avatar + email and lets
+  the user edit name / phone / company. These save to the Supabase user's
+  `user_metadata` via `supabase.auth.updateUser` — no extra table required.
+
 ## Not done yet (possible next step)
 
 Cart / favourites / orders still live in React state (`app/providers.jsx`) and
 reset on reload. Moving them into Supabase tables keyed by `user.id` (with Row
-Level Security) is the natural follow-up now that there's a real user to attach
-them to.
+Level Security) is the natural follow-up.

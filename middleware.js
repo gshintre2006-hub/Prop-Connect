@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { SUPABASE_URL, SUPABASE_ANON_KEY, isSupabaseConfigured } from "@/lib/supabase/config";
 
-// Routes that require a signed-in user.
-const PROTECTED = ["/cart", "/checkout", "/orders"];
+// The only routes reachable while signed out. Everything else needs a session.
+const PUBLIC = ["/login", "/auth"];
 
 export async function middleware(request) {
   let response = NextResponse.next({ request });
@@ -30,19 +30,22 @@ export async function middleware(request) {
   const { data: { user } } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
-  const needsAuth = PROTECTED.some((p) => path === p || path.startsWith(`${p}/`));
+  const isPublic = PUBLIC.some((p) => path === p || path.startsWith(`${p}/`));
 
-  if (needsAuth && !user) {
+  // Signed out on a gated route -> send to login, remember where they were headed.
+  if (!user && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
+    url.search = "";
     url.searchParams.set("redirectTo", path);
     return NextResponse.redirect(url);
   }
 
-  // Already signed in and visiting /login -> bounce home.
-  if (path === "/login" && user) {
+  // Signed in and sitting on /login -> bounce to their destination (or home).
+  if (user && path === "/login") {
     const url = request.nextUrl.clone();
-    url.pathname = request.nextUrl.searchParams.get("redirectTo") || "/";
+    const rt = request.nextUrl.searchParams.get("redirectTo");
+    url.pathname = rt && rt.startsWith("/") ? rt : "/";
     url.search = "";
     return NextResponse.redirect(url);
   }
