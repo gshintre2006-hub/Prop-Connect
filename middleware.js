@@ -4,12 +4,39 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY, isSupabaseConfigured } from "@/lib/sup
 
 // The only routes reachable while signed out. Everything else needs a session.
 const PUBLIC = ["/login", "/auth"];
+const OAUTH_JUNK = ["code", "state", "error", "error_code", "error_description"];
 
 export async function middleware(request) {
   let response = NextResponse.next({ request });
 
   // Supabase not wired up yet -> don't gate anything, keep the app usable.
   if (!isSupabaseConfigured) return response;
+
+  const path = request.nextUrl.pathname;
+
+  // Safety net: if an OAuth `code` lands on any route other than the dedicated
+  // callback (e.g. Supabase fell back to the Site URL), exchange it here, set
+  // the session cookies, and bounce to a clean URL.
+  const code = request.nextUrl.searchParams.get("code");
+  if (code && path !== "/auth/callback") {
+    const clean = request.nextUrl.clone();
+    OAUTH_JUNK.forEach((k) => clean.searchParams.delete(k));
+    const redirect = NextResponse.redirect(clean);
+    const sb = createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(list) {
+          list.forEach(({ name, value, options }) =>
+            redirect.cookies.set(name, value, options)
+          );
+        },
+      },
+    });
+    await sb.auth.exchangeCodeForSession(code);
+    return redirect;
+  }
 
   const supabase = createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     cookies: {
@@ -29,7 +56,6 @@ export async function middleware(request) {
   // Refreshes the session cookie if needed.
   const { data: { user } } = await supabase.auth.getUser();
 
-  const path = request.nextUrl.pathname;
   const isPublic = PUBLIC.some((p) => path === p || path.startsWith(`${p}/`));
 
   // Signed out on a gated route -> send to login, remember where they were headed.

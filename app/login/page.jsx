@@ -7,5 +7,7 @@ export default function LoginPage({ searchParams }) {
     typeof searchParams?.redirectTo === "string" && searchParams.redirectTo.startsWith("/")
       ? searchParams.redirectTo
       : "/";
-  return <LoginView redirectTo={redirectTo} />;
+  const initialError =
+    typeof searchParams?.error === "string" ? searchParams.error : "";
+  return <LoginView redirectTo={redirectTo} initialError={initialError} />;
 }

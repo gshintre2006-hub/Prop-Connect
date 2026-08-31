@@ -7,11 +7,11 @@ import { C } from "@/lib/tokens";
 import { Logo } from "@/components/ui";
 import { useAuth } from "@/components/AuthProvider";
 
-export function LoginView({ redirectTo = "/" }) {
+export function LoginView({ redirectTo = "/", initialError = "" }) {
   const router = useRouter();
   const { user, loading, configured, signInWithGoogle } = useAuth();
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(initialError);
 
   // Already signed in? Leave the login screen.
   useEffect(() => {
