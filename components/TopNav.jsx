@@ -156,6 +156,18 @@ export function TopNav() {
           </div>
 
           <div className="sm:hidden pb-3">
+            <button
+              onClick={() => router.push("/")}
+              className="w-full flex flex-col items-center leading-none mb-3 select-none"
+            >
+              <span style={{ fontFamily: "Jost, sans-serif", fontWeight: 600, letterSpacing: "0.13em", fontSize: "1.75rem" }}>
+                <span style={{ color: C.primary }}>PROP</span>
+                <span style={{ color: C.highlight }}>CONNECT</span>
+              </span>
+              <span style={{ color: "#7C9599", fontFamily: "Jost, sans-serif", fontSize: "0.55rem", letterSpacing: "0.32em", marginTop: "5px" }}>
+                FIND · CONNECT · CREATE
+              </span>
+            </button>
             <div className="relative">
               <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2" color="#8AA2A6" />
               <input
