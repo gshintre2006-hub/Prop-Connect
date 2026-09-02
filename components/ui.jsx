@@ -10,30 +10,14 @@ import { LOGO_FULL, LOGO_MARK } from "@/lib/logos";
 /*  variant="full" -> full stacked lockup (login / hero / footer)         */
 /*  variant="mark" -> icon crop + typeset wordmark for the slim navbar    */
 /* ---------------------------------------------------------------------- */
-export function Logo({ size = 40, variant = "mark", dark = false }) {
-  if (variant === "full") {
-    return (
-      <img
-        src={LOGO_FULL}
-        alt="PropConnect — Find. Connect. Create."
-        style={{ height: size, width: "auto", display: "block" }}
-        className="select-none"
-      />
-    );
-  }
+export function Logo({ size = 40 }) {
   return (
-    <div className="flex items-center gap-2.5 select-none">
-      <img src={LOGO_MARK} alt="PropConnect" style={{ height: size, width: "auto", display: "block" }} />
-      <div className="leading-none">
-        <div style={{ fontFamily: "Jost, sans-serif", letterSpacing: "0.07em", fontSize: size < 40 ? "1rem" : "1.3rem" }}>
-          <span style={{ color: dark ? C.white : C.primary, fontWeight: 600 }}>PROP</span>
-          <span style={{ color: C.highlight, fontWeight: 600 }}>CONNECT</span>
-        </div>
-        <div style={{ color: dark ? C.accent : "#7C9599", fontSize: "0.6rem", letterSpacing: "0.24em", fontFamily: "Jost, sans-serif" }}>
-          FIND · CONNECT · CREATE
-        </div>
-      </div>
-    </div>
+    <img
+      src={LOGO_FULL}
+      alt="PropConnect — Find. Connect. Create."
+      style={{ height: size, width: "auto", display: "block" }}
+      className="select-none"
+    />
   );
 }
 

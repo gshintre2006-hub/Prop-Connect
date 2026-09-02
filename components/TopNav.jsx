@@ -57,7 +57,7 @@ export function TopNav() {
         <div className="max-w-[1200px] mx-auto px-4 sm:px-6">
           <div className="flex items-center gap-6 h-[64px] sm:h-[68px]">
             <button onClick={() => router.push("/")} className="shrink-0">
-              <Logo size={34} />
+              <Logo size={40} />
             </button>
 
             <nav className="hidden md:flex items-center gap-1 ml-1 shrink-0">
