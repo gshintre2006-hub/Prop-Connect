@@ -7,11 +7,34 @@ import { C } from "@/lib/tokens";
 import { Logo } from "@/components/ui";
 import { useAuth } from "@/components/AuthProvider";
 
+function humanise(raw) {
+  let msg = raw || "Sign-in failed.";
+  try { msg = decodeURIComponent(msg); } catch {}
+  try { msg = decodeURIComponent(msg); } catch {}
+  msg = msg.replace(/\+/g, " ");
+  if (/exchange external code/i.test(msg)) {
+    return "Google rejected the sign-in. This is a Supabase → Google setup issue (wrong OAuth client secret, or the redirect URI isn't saved in Google Cloud) — not the app. Fix it in the Supabase dashboard, then retry. Details: " + msg;
+  }
+  return msg;
+}
+
 export function LoginView({ redirectTo = "/", initialError = "" }) {
   const router = useRouter();
   const { user, loading, configured, signInWithGoogle } = useAuth();
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(initialError);
+  const [error, setError] = useState(initialError ? humanise(initialError) : "");
+
+  // Supabase returns OAuth errors in the URL *hash* (#error=...), which the
+  // server never sees. Pull it out here so failures aren't a silent bounce.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const h = window.location.hash;
+    if (h && /error/i.test(h)) {
+      const p = new URLSearchParams(h.replace(/^#/, ""));
+      setError(humanise(p.get("error_description") || p.get("error") || ""));
+      window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    }
+  }, []);
 
   // Already signed in? Leave the login screen.
   useEffect(() => {
