@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-import { SUPABASE_URL, SUPABASE_ANON_KEY, isSupabaseConfigured } from "@/lib/supabase/config";
+import { SUPABASE_URL, SUPABASE_ANON_KEY, isSupabaseConfigured, REQUIRE_AUTH } from "@/lib/supabase/config";
 
 // The only routes reachable while signed out. Everything else needs a session.
 const PUBLIC = ["/login", "/auth"];
@@ -57,9 +57,11 @@ export async function middleware(request) {
   const { data: { user } } = await supabase.auth.getUser();
 
   const isPublic = PUBLIC.some((p) => path === p || path.startsWith(`${p}/`));
+  // /account always needs a session; everything else only when REQUIRE_AUTH is on.
+  const gated = REQUIRE_AUTH ? !isPublic : path === "/account" || path.startsWith("/account/");
 
   // Signed out on a gated route -> send to login, remember where they were headed.
-  if (!user && !isPublic) {
+  if (!user && gated) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.search = "";
