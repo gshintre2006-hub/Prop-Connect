@@ -43,7 +43,19 @@ export function AuthProvider({ children }) {
       user,
       loading,
       configured: isSupabaseConfigured,
-      // Google-only. OAuth covers both sign-in and first-time sign-up.
+      // Passwordless email link — works with zero extra Supabase config.
+      // First-time emails create the account automatically.
+      signInWithEmail: (email, next = "/") =>
+        supabase
+          ? supabase.auth.signInWithOtp({
+              email,
+              options: {
+                shouldCreateUser: true,
+                emailRedirectTo: `${origin}/auth/callback?redirectTo=${encodeURIComponent(next)}`,
+              },
+            })
+          : Promise.resolve(NOT_CONFIGURED),
+      // OAuth covers both sign-in and first-time sign-up.
       signInWithGoogle: (next = "/") =>
         supabase
           ? supabase.auth.signInWithOAuth({
