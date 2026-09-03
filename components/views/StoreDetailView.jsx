@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import {
-  ArrowLeft, Star, MapPin, Phone, MessageCircle, Mail, Clock,
+  ArrowLeft, Star, MapPin, Phone, MessageCircle, Mail, Clock, Heart,
 } from "lucide-react";
 import { C } from "@/lib/tokens";
 import { PROPS } from "@/lib/data";
@@ -12,8 +12,9 @@ import { useStore } from "@/app/providers";
 
 export function StoreDetailView({ store }) {
   const router = useRouter();
-  const { favs, toggleFav, addToCart } = useStore();
+  const { favs, toggleFav, addToCart, favStores, toggleFavStore } = useStore();
   const items = PROPS.filter((p) => p.storeId === store.id);
+  const isFav = favStores.includes(store.id);
 
   return (
     <div>
@@ -22,6 +23,14 @@ export function StoreDetailView({ store }) {
         <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,60,75,0.55), rgba(0,60,75,0))" }} />
         <button onClick={() => router.push("/stores")} className="absolute top-5 left-5 w-9 h-9 rounded-full flex items-center justify-center" style={{ backgroundColor: "rgba(255,255,255,0.9)" }}>
           <ArrowLeft size={15} color={C.primary} />
+        </button>
+        <button
+          onClick={() => toggleFavStore(store.id)}
+          className="absolute top-5 right-5 w-9 h-9 rounded-full flex items-center justify-center"
+          style={{ backgroundColor: "rgba(255,255,255,0.9)" }}
+          aria-label={isFav ? "Remove from saved" : "Save store"}
+        >
+          <Heart size={15} color={C.highlight} fill={isFav ? C.highlight : "none"} />
         </button>
       </div>
 

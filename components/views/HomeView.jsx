@@ -1,11 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ChevronRight, Star, MapPin, Search, Heart, Store, Image as ImageIcon } from "lucide-react";
+import { ChevronRight, Star, Search, Heart, Store } from "lucide-react";
 import { C } from "@/lib/tokens";
-import { CATEGORIES, STORES, PROPS, storeById } from "@/lib/data";
+import { CATEGORIES, STORES, PROPS, REVIEWS, storeById } from "@/lib/data";
 import { Pill, SectionTitle, Button, Footer } from "@/components/ui";
 import { PropCard } from "@/components/PropCard";
+import { StoreCard } from "@/components/StoreCard";
 import { useStore } from "@/app/providers";
 
 const SERIF = "'Playfair Display', Georgia, 'Times New Roman', serif";
@@ -146,7 +147,20 @@ export function HomeView() {
           ))}
         </div>
 
-        {/* Trending */}
+        {/* Recently added — first */}
+        <div className="flex items-end justify-between">
+          <SectionTitle eyebrow="Fresh inventory" title="Recently added props" />
+          <button onClick={() => router.push("/browse")} className="text-sm mb-7 flex items-center gap-1" style={{ color: C.highlight, fontFamily: "Jost, sans-serif" }}>
+            View all <ChevronRight size={14} />
+          </button>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-16">
+          {recent.map((p) => (
+            <PropCard key={p.id} p={p} onFav={toggleFav} isFav={favs.includes(p.id)} onAdd={addToCart} />
+          ))}
+        </div>
+
+        {/* Trending — second */}
         <div className="flex items-end justify-between">
           <SectionTitle eyebrow="This week" title="Trending props" />
           <button onClick={() => router.push("/browse")} className="text-sm mb-7 flex items-center gap-1" style={{ color: C.highlight, fontFamily: "Jost, sans-serif" }}>
@@ -159,15 +173,7 @@ export function HomeView() {
           ))}
         </div>
 
-        {/* Recently added */}
-        <SectionTitle eyebrow="Fresh inventory" title="Recently added props" />
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-16">
-          {recent.map((p) => (
-            <PropCard key={p.id} p={p} onFav={toggleFav} isFav={favs.includes(p.id)} onAdd={addToCart} />
-          ))}
-        </div>
-
-        {/* Popular stores */}
+        {/* Popular stores — third */}
         <div className="flex items-end justify-between">
           <SectionTitle eyebrow="Trusted network" title="Popular stores" />
           <button onClick={() => router.push("/stores")} className="text-sm mb-7 flex items-center gap-1" style={{ color: C.highlight, fontFamily: "Jost, sans-serif" }}>
@@ -175,21 +181,7 @@ export function HomeView() {
           </button>
         </div>
         <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-16">
-          {STORES.map((s) => (
-            <button key={s.id} onClick={() => router.push(`/stores/${s.id}`)} className="rounded-2xl overflow-hidden text-left" style={{ backgroundColor: C.white, border: `1px solid ${C.line}` }}>
-              <img src={s.photos[0]} alt={s.name} className="w-full h-[110px] object-cover" />
-              <div className="p-4">
-                <div className="flex items-center gap-2 mb-1">
-                  <img src={s.logo} className="w-6 h-6 rounded-full object-cover" alt="" />
-                  <span className="text-sm" style={{ color: C.ink, fontFamily: "Jost, sans-serif", fontWeight: 500 }}>{s.name}</span>
-                </div>
-                <div className="flex items-center gap-1 text-[0.72rem]" style={{ color: "#8AA2A6" }}>
-                  <MapPin size={10} /> {s.location}
-                </div>
-                <div className="text-[0.72rem] mt-1.5" style={{ color: C.secondary }}>{s.totalProps} props listed</div>
-              </div>
-            </button>
-          ))}
+          {STORES.map((s) => <StoreCard key={s.id} s={s} />)}
         </div>
 
         {/* How it works */}
@@ -208,13 +200,28 @@ export function HomeView() {
           ))}
         </div>
 
-        {/* Testimonial */}
-        <div className="rounded-3xl p-8 sm:p-10 mb-6" style={{ backgroundColor: C.primary }}>
-          <Star size={18} color={C.accent} fill={C.accent} />
-          <p className="text-white text-lg sm:text-xl mt-4 max-w-2xl" style={{ fontFamily: "Jost, sans-serif", fontWeight: 300 }}>
-            &ldquo;What used to take my team three days of driving between Aarey stores now takes twenty minutes on PropConnect.&rdquo;
-          </p>
-          <p className="text-[0.8rem] mt-4" style={{ color: C.secondary, fontFamily: "Jost, sans-serif" }}>— Art Director, feature film production</p>
+        {/* Customer reviews — fourth */}
+        <SectionTitle eyebrow="From the community" title="What production teams say" />
+        <div className="grid sm:grid-cols-2 gap-5 mb-4">
+          {REVIEWS.map((r) => (
+            <div key={r.id} className="rounded-2xl p-6" style={{ backgroundColor: C.white, border: `1px solid ${C.line}` }}>
+              <div className="flex items-center gap-1 mb-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star key={i} size={14} color={C.highlight} fill={i < r.rating ? C.highlight : "none"} />
+                ))}
+              </div>
+              <p className="text-sm" style={{ color: C.ink, fontFamily: "Jost, sans-serif" }}>&ldquo;{r.quote}&rdquo;</p>
+              <div className="flex items-center gap-2.5 mt-4">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold" style={{ backgroundColor: C.primaryTint, color: C.primary, fontFamily: "Jost, sans-serif" }}>
+                  {r.name.slice(0, 1)}
+                </div>
+                <div>
+                  <div className="text-[0.8rem]" style={{ color: C.ink, fontFamily: "Jost, sans-serif", fontWeight: 500 }}>{r.name}</div>
+                  <div className="text-[0.7rem]" style={{ color: "#8AA2A6" }}>{r.role}</div>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 

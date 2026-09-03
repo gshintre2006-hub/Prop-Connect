@@ -1,33 +1,184 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { UploadCloud, Image as ImageIcon, Plus, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  UploadCloud, Image as ImageIcon, Plus, Trash2, Sparkles, FileDown, Check,
+} from "lucide-react";
 import { C } from "@/lib/tokens";
+import { storeById } from "@/lib/data";
+import { MOOD_TONES, suggestProps, stylistIntro } from "@/lib/stylist";
+import { exportMoodboardPdf } from "@/lib/moodboardPdf";
 import { useStore } from "@/app/providers";
 
 export function MoodboardView() {
+  const router = useRouter();
   const { moodboardImages: images, addMoodboardImages, removeMoodboardImage } = useStore();
-  const [dragging, setDragging] = useState(false);
   const fileInputRef = useRef(null);
+
+  const [dragging, setDragging] = useState(false);
+  const [tone, setTone] = useState("warm");
+  const [desc, setDesc] = useState("");
+  const [thinking, setThinking] = useState(false);
+  const [chat, setChat] = useState(null); // { intro, results: [{prop, reason}] }
+  const [added, setAdded] = useState([]); // prop ids added to board
+  const [pdfBusy, setPdfBusy] = useState(false);
 
   const handleFiles = (fileList) => {
     const files = Array.from(fileList || []).filter((f) => f.type.startsWith("image/"));
     if (!files.length) return;
-    const newImages = files.map((f) => ({
-      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-      url: URL.createObjectURL(f),
-      name: f.name,
-    }));
-    addMoodboardImages(newImages);
+    addMoodboardImages(
+      files.map((f) => ({
+        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        url: URL.createObjectURL(f),
+        name: f.name,
+      }))
+    );
   };
+
+  const askStylist = () => {
+    setThinking(true);
+    setChat(null);
+    setTimeout(() => {
+      const results = suggestProps({ tone, description: desc, limit: 6 });
+      setChat({ intro: stylistIntro({ tone, description: desc, count: results.length }), results });
+      setThinking(false);
+    }, 700);
+  };
+
+  const addProp = (prop) => {
+    addMoodboardImages([{ id: `prop-${prop.id}-${Date.now()}`, url: prop.img, name: prop.name }]);
+    setAdded((a) => [...a, prop.id]);
+  };
+
+  const doExport = async () => {
+    setPdfBusy(true);
+    try {
+      await exportMoodboardPdf({
+        toneLabel: (MOOD_TONES.find((t) => t.key === tone) || {}).label,
+        description: desc,
+        images,
+        suggestions: chat?.results || [],
+      });
+    } finally {
+      setPdfBusy(false);
+    }
+  };
+
+  const canExport = images.length > 0 || (chat?.results || []).length > 0;
 
   return (
     <div className="max-w-[1200px] mx-auto px-5 sm:px-6 py-8 sm:py-10">
-      <h1 style={{ color: C.primary, fontFamily: "Jost, sans-serif", fontWeight: 500 }} className="text-2xl mb-1">Moodboard</h1>
-      <p className="text-sm mb-7" style={{ color: "#7C9599" }}>
-        Drag and drop reference photos, set inspiration, or your own site pictures here — space stays open for images you add anytime.
-      </p>
+      <div className="flex items-start justify-between gap-4 mb-6">
+        <div>
+          <h1 style={{ color: C.primary, fontFamily: "Jost, sans-serif", fontWeight: 500 }} className="text-2xl mb-1">Moodboard</h1>
+          <p className="text-sm" style={{ color: "#7C9599" }}>
+            Add photos of your space, set a mood tone, and let the stylist suggest props that fit — then share the board as a PDF.
+          </p>
+        </div>
+        <button
+          onClick={doExport}
+          disabled={!canExport || pdfBusy}
+          className="shrink-0 rounded-full px-4 py-2.5 text-xs flex items-center gap-1.5 disabled:opacity-40"
+          style={{ backgroundColor: C.primary, color: C.white, fontFamily: "Jost, sans-serif", fontWeight: 500 }}
+        >
+          <FileDown size={14} /> {pdfBusy ? "Building…" : "Share as PDF"}
+        </button>
+      </div>
 
+      {/* The space + stylist */}
+      <div className="rounded-2xl p-5 sm:p-6 mb-8" style={{ backgroundColor: C.white, border: `1px solid ${C.line}` }}>
+        <div className="text-xs mb-2" style={{ color: "#6B8489", fontFamily: "Jost, sans-serif" }}>Mood tone</div>
+        <div className="flex flex-wrap gap-2 mb-4">
+          {MOOD_TONES.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTone(t.key)}
+              className="text-xs px-3 py-1.5 rounded-full"
+              style={{
+                fontFamily: "Jost, sans-serif",
+                backgroundColor: tone === t.key ? C.primary : C.bg,
+                color: tone === t.key ? C.white : C.primary,
+                border: `1px solid ${tone === t.key ? C.primary : C.line}`,
+              }}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="text-xs mb-2" style={{ color: "#6B8489", fontFamily: "Jost, sans-serif" }}>Describe the space</div>
+        <textarea
+          rows={3}
+          value={desc}
+          onChange={(e) => setDesc(e.target.value)}
+          placeholder="e.g. 1970s middle-class Bombay living room, warm evening light, teak and brass, a reading corner…"
+          className="w-full rounded-xl px-3.5 py-3 text-sm outline-none"
+          style={{ border: `1px solid ${C.line}`, backgroundColor: C.bg, fontFamily: "Jost, sans-serif", color: C.ink }}
+        />
+
+        <button
+          onClick={askStylist}
+          disabled={thinking}
+          className="mt-3 rounded-full px-4 py-2.5 text-xs flex items-center gap-1.5 disabled:opacity-50"
+          style={{ backgroundColor: C.highlight, color: C.white, fontFamily: "Jost, sans-serif", fontWeight: 500 }}
+        >
+          <Sparkles size={14} /> {thinking ? "Thinking…" : "Suggest props for this space"}
+        </button>
+
+        {(thinking || chat) && (
+          <div className="mt-5 rounded-2xl p-4" style={{ backgroundColor: C.bg, border: `1px solid ${C.line}` }}>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: C.primary }}>
+                <Sparkles size={13} color={C.white} />
+              </div>
+              <span className="text-xs" style={{ color: C.primary, fontFamily: "Jost, sans-serif", fontWeight: 600 }}>PropConnect Stylist</span>
+            </div>
+
+            {thinking ? (
+              <p className="text-sm" style={{ color: "#8AA2A6" }}>Looking through partner inventory…</p>
+            ) : (
+              <>
+                <p className="text-sm mb-4" style={{ color: C.ink, fontFamily: "Jost, sans-serif" }}>{chat.intro}</p>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {chat.results.map(({ prop, reason }) => (
+                    <div key={prop.id} className="rounded-xl overflow-hidden" style={{ backgroundColor: C.white, border: `1px solid ${C.line}` }}>
+                      <img src={prop.img} alt={prop.name} className="w-full h-24 object-cover" />
+                      <div className="p-3">
+                        <div className="text-[0.8rem] leading-tight" style={{ color: C.ink, fontFamily: "Jost, sans-serif", fontWeight: 600 }}>{prop.name}</div>
+                        <div className="text-[0.68rem] mt-0.5" style={{ color: "#8AA2A6" }}>{storeById(prop.storeId)?.name} · ₹{prop.price}/day</div>
+                        {reason && (
+                          <div className="text-[0.66rem] mt-1" style={{ color: C.secondary }}>matches “{reason}”</div>
+                        )}
+                        <div className="flex items-center gap-2 mt-2">
+                          <button
+                            onClick={() => addProp(prop)}
+                            disabled={added.includes(prop.id)}
+                            className="flex-1 rounded-full py-1.5 text-[0.68rem] flex items-center justify-center gap-1 disabled:opacity-60"
+                            style={{ backgroundColor: added.includes(prop.id) ? "#DCEEE4" : C.primaryTint, color: added.includes(prop.id) ? "#1F7A52" : C.primary, fontFamily: "Jost, sans-serif", fontWeight: 500 }}
+                          >
+                            {added.includes(prop.id) ? <><Check size={11} /> Added</> : <><Plus size={11} /> Add to board</>}
+                          </button>
+                          <button
+                            onClick={() => router.push(`/props/${prop.id}`)}
+                            className="rounded-full px-2.5 py-1.5 text-[0.68rem]"
+                            style={{ border: `1px solid ${C.line}`, color: C.primary, fontFamily: "Jost, sans-serif" }}
+                          >
+                            View
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Space photos */}
+      <div className="text-xs mb-3" style={{ color: "#6B8489", fontFamily: "Jost, sans-serif" }}>Space photos &amp; references</div>
       <div
         onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
         onDragLeave={() => setDragging(false)}
@@ -35,38 +186,27 @@ export function MoodboardView() {
         onClick={() => fileInputRef.current?.click()}
         className="w-full rounded-3xl flex flex-col items-center justify-center text-center cursor-pointer transition-colors"
         style={{
-          minHeight: "220px",
-          padding: "32px 16px",
+          minHeight: "180px",
+          padding: "28px 16px",
           border: `2px dashed ${dragging ? C.highlight : C.line}`,
           backgroundColor: dragging ? C.accent : C.white,
         }}
       >
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          multiple
-          className="hidden"
-          onChange={(e) => { handleFiles(e.target.files); e.target.value = ""; }}
-        />
-        <div className="w-14 h-14 rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: C.primaryTint }}>
-          <UploadCloud size={24} color={C.primary} />
+        <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => { handleFiles(e.target.files); e.target.value = ""; }} />
+        <div className="w-12 h-12 rounded-full flex items-center justify-center mb-3" style={{ backgroundColor: C.primaryTint }}>
+          <UploadCloud size={22} color={C.primary} />
         </div>
-        <p className="text-sm" style={{ color: C.ink, fontFamily: "Jost, sans-serif", fontWeight: 500 }}>
-          Drag photos here, or click to browse
-        </p>
-        <p className="text-xs mt-1.5" style={{ color: "#9AAEB1" }}>
-          JPG, PNG — add as many as you like, anytime
-        </p>
+        <p className="text-sm" style={{ color: C.ink, fontFamily: "Jost, sans-serif", fontWeight: 500 }}>Drag photos here, or click to browse</p>
+        <p className="text-xs mt-1.5" style={{ color: "#9AAEB1" }}>Your space shots, set references, inspiration — add anytime</p>
       </div>
 
       {images.length === 0 ? (
-        <div className="mt-8 rounded-2xl p-8 text-center" style={{ backgroundColor: C.white, border: `1px solid ${C.line}` }}>
+        <div className="mt-6 rounded-2xl p-8 text-center" style={{ backgroundColor: C.white, border: `1px solid ${C.line}` }}>
           <ImageIcon size={26} color="#B7C4C6" className="mx-auto mb-3" />
           <p className="text-sm" style={{ color: "#8AA2A6" }}>No photos yet. This board stays ready for whatever you drop in.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mt-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mt-6">
           {images.map((img) => (
             <div key={img.id} className="relative group rounded-2xl overflow-hidden" style={{ border: `1px solid ${C.line}`, aspectRatio: "1 / 1" }}>
               <img src={img.url} alt={img.name} className="w-full h-full object-cover" />

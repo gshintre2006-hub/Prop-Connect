@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Search, ShoppingCart, User, Home as HomeIcon, Store, ClipboardList,
-  Image as ImageIcon, LogOut, LogIn,
+  Image as ImageIcon, LogOut, LogIn, Bell, Heart, Trash2,
 } from "lucide-react";
 import { C } from "@/lib/tokens";
 import { Logo } from "./ui";
@@ -19,30 +19,58 @@ const NAV = [
   { key: "/orders", label: "My Rentals", icon: ClipboardList },
 ];
 
+function timeAgo(ts) {
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 45) return "just now";
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+  return `${Math.floor(s / 86400)}d ago`;
+}
+
+function Badge({ n }) {
+  if (!n) return null;
+  return (
+    <span className="absolute -top-1 -right-1 rounded-full text-[0.6rem] flex items-center justify-center text-white" style={{ backgroundColor: C.highlight, minWidth: "17px", height: "17px" }}>
+      {n > 9 ? "9+" : n}
+    </span>
+  );
+}
+
 export function TopNav() {
   const pathname = usePathname();
   const router = useRouter();
-  const { cart } = useStore();
+  const { cart, favs, favStores, notifications, unreadCount, markNotificationsRead, clearNotifications } = useStore();
   const { user, signOut } = useAuth();
+
   const cartCount = cart.reduce((s, i) => s + i.qty, 0);
+  const savedCount = favs.length + favStores.length;
+
   const [query, setQuery] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
   const menuRef = useRef(null);
+  const notifRef = useRef(null);
 
   const isActive = (key) => (key === "/" ? pathname === "/" : pathname.startsWith(key));
-  const submitSearch = () =>
-    router.push(`/browse?q=${encodeURIComponent(query.trim())}`);
+  const submitSearch = () => router.push(`/browse?q=${encodeURIComponent(query.trim())}`);
 
-  useEffect(() => setMenuOpen(false), [pathname]);
+  useEffect(() => { setMenuOpen(false); setNotifOpen(false); }, [pathname]);
 
   useEffect(() => {
-    if (!menuOpen) return;
     const onClick = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
+      if (notifRef.current && !notifRef.current.contains(e.target)) setNotifOpen(false);
     };
     document.addEventListener("mousedown", onClick);
     return () => document.removeEventListener("mousedown", onClick);
-  }, [menuOpen]);
+  }, []);
+
+  const openNotifs = () => {
+    setNotifOpen((o) => {
+      if (!o) setTimeout(markNotificationsRead, 800);
+      return !o;
+    });
+  };
 
   const handleSignOut = async () => {
     setMenuOpen(false);
@@ -50,6 +78,42 @@ export function TopNav() {
     router.push("/");
     router.refresh();
   };
+
+  const NotifPanel = (
+    <div className="absolute right-0 mt-2 w-[300px] rounded-2xl p-2 z-50" style={{ backgroundColor: C.white, border: `1px solid ${C.line}`, boxShadow: "0 16px 40px -20px rgba(0,60,75,0.35)" }}>
+      <div className="flex items-center justify-between px-3 py-2">
+        <span className="text-sm" style={{ color: C.primary, fontFamily: "Jost, sans-serif", fontWeight: 600 }}>Notifications</span>
+        {notifications.length > 0 && (
+          <button onClick={clearNotifications} className="text-[0.68rem] flex items-center gap-1" style={{ color: "#9AAEB1", fontFamily: "Jost, sans-serif" }}>
+            <Trash2 size={11} /> Clear
+          </button>
+        )}
+      </div>
+      <div className="max-h-[320px] overflow-y-auto">
+        {notifications.length === 0 ? (
+          <div className="px-3 py-8 text-center text-xs" style={{ color: "#9AAEB1" }}>
+            No notifications yet. Place a rental and we&apos;ll ping you as it&apos;s packed, dispatched and delivered.
+          </div>
+        ) : (
+          notifications.map((n) => (
+            <button
+              key={n.id}
+              onClick={() => { setNotifOpen(false); if (n.orderId) router.push("/orders"); }}
+              className="w-full text-left px-3 py-2.5 rounded-xl flex gap-2.5"
+              style={{ backgroundColor: n.read ? "transparent" : C.primaryTint }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: n.read ? "transparent" : C.highlight }} />
+              <span className="min-w-0">
+                <span className="block text-[0.8rem] truncate" style={{ color: C.ink, fontFamily: "Jost, sans-serif", fontWeight: 500 }}>{n.title}</span>
+                <span className="block text-[0.72rem]" style={{ color: "#8AA2A6" }}>{n.body}</span>
+                <span className="block text-[0.62rem] mt-0.5" style={{ color: "#B7C4C6" }}>{timeAgo(n.ts)}</span>
+              </span>
+            </button>
+          ))
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <>
@@ -80,7 +144,7 @@ export function TopNav() {
             </nav>
 
             <div className="flex-1 hidden sm:flex items-center">
-              <div className="relative w-full max-w-[380px] ml-auto mr-3">
+              <div className="relative w-full max-w-[340px] ml-auto mr-3">
                 <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2" color="#8AA2A6" />
                 <input
                   value={query}
@@ -94,24 +158,37 @@ export function TopNav() {
             </div>
 
             <div className="flex items-center gap-2 ml-auto sm:ml-0">
-              <button onClick={() => router.push("/cart")} className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: C.primaryTint }}>
+              <button onClick={() => router.push("/saved")} className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full hidden sm:flex items-center justify-center" style={{ backgroundColor: C.primaryTint }} title="Saved">
+                <Heart size={15} color={C.primary} />
+                <Badge n={savedCount} />
+              </button>
+
+              <div className="relative" ref={notifRef}>
+                <button onClick={openNotifs} className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: C.primaryTint }} title="Notifications">
+                  <Bell size={15} color={C.primary} />
+                  <Badge n={unreadCount} />
+                </button>
+                {notifOpen && NotifPanel}
+              </div>
+
+              <button onClick={() => router.push("/cart")} className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: C.primaryTint }} title="Cart">
                 <ShoppingCart size={15} color={C.primary} />
-                {cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 rounded-full text-[0.6rem] flex items-center justify-center text-white" style={{ backgroundColor: C.highlight, minWidth: "17px", height: "17px" }}>
-                    {cartCount}
-                  </span>
-                )}
+                <Badge n={cartCount} />
               </button>
 
               {user ? (
                 <div className="relative" ref={menuRef}>
                   <button
                     onClick={() => setMenuOpen((o) => !o)}
-                    className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xs font-semibold"
+                    className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xs font-semibold overflow-hidden"
                     style={{ backgroundColor: C.primary, color: C.white, fontFamily: "Jost, sans-serif" }}
                     title={user.email}
                   >
-                    {(user.email || "?").slice(0, 1).toUpperCase()}
+                    {user.user_metadata?.avatar_url || user.user_metadata?.picture ? (
+                      <img src={user.user_metadata.avatar_url || user.user_metadata.picture} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      (user.email || "?").slice(0, 1).toUpperCase()
+                    )}
                   </button>
                   {menuOpen && (
                     <div className="absolute right-0 mt-2 w-56 rounded-2xl p-2 z-50" style={{ backgroundColor: C.white, border: `1px solid ${C.line}`, boxShadow: "0 16px 40px -20px rgba(0,60,75,0.35)" }}>
@@ -119,20 +196,20 @@ export function TopNav() {
                         <div className="text-[0.65rem] uppercase tracking-wide" style={{ color: "#9AAEB1", fontFamily: "Jost, sans-serif" }}>Signed in as</div>
                         <div className="text-sm truncate" style={{ color: C.ink, fontFamily: "Jost, sans-serif" }}>{user.email}</div>
                       </div>
-                      <button
-                        onClick={() => { setMenuOpen(false); router.push("/account"); }}
-                        className="w-full text-left px-3 py-2 rounded-xl text-sm flex items-center gap-2"
-                        style={{ color: C.primary, fontFamily: "Jost, sans-serif" }}
-                      >
-                        <User size={14} /> Profile
-                      </button>
-                      <button
-                        onClick={() => { setMenuOpen(false); router.push("/orders"); }}
-                        className="w-full text-left px-3 py-2 rounded-xl text-sm flex items-center gap-2"
-                        style={{ color: C.primary, fontFamily: "Jost, sans-serif" }}
-                      >
-                        <ClipboardList size={14} /> My rentals
-                      </button>
+                      {[
+                        { label: "Profile", icon: User, to: "/account" },
+                        { label: "Saved items", icon: Heart, to: "/saved" },
+                        { label: "My rentals", icon: ClipboardList, to: "/orders" },
+                      ].map((m) => (
+                        <button
+                          key={m.to}
+                          onClick={() => { setMenuOpen(false); router.push(m.to); }}
+                          className="w-full text-left px-3 py-2 rounded-xl text-sm flex items-center gap-2"
+                          style={{ color: C.primary, fontFamily: "Jost, sans-serif" }}
+                        >
+                          <m.icon size={14} /> {m.label}
+                        </button>
+                      ))}
                       <button
                         onClick={handleSignOut}
                         className="w-full text-left px-3 py-2 rounded-xl text-sm flex items-center gap-2"
