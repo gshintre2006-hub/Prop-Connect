@@ -44,12 +44,12 @@ await keyed().png().trim({ threshold: 1 }).toFile(FULL);
 //     then add a transparent margin so nothing touches the edge (was clipping
 //     at the bottom in the nav) ---
 const topBuf = await keyed()
-  .extract({ left: 0, top: 0, width: W, height: Math.round(H * 0.56) })
+  .extract({ left: 0, top: 0, width: W, height: Math.round(H * 0.62) })
   .png()
   .toBuffer();
 const trimmed = await sharp(topBuf).trim({ threshold: 1 }).toBuffer();
 const tm = await sharp(trimmed).metadata();
-const pad = Math.round(Math.max(tm.width, tm.height) * 0.09);
+const pad = Math.round(Math.max(tm.width, tm.height) * 0.18);
 await sharp(trimmed)
   .extend({ top: pad, bottom: pad, left: pad, right: pad, background: { r: 0, g: 0, b: 0, alpha: 0 } })
   .toFile(MARK);

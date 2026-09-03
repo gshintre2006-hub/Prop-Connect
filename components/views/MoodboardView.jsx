@@ -62,14 +62,19 @@ export function MoodboardView() {
     );
   };
 
+  const uploads = images.filter((i) => !i.id.startsWith("prop-")); // user photos, not added props
+  const usePhotos = uploads.slice(0, 4);
+
   const askStylist = async () => {
     setThinking(true);
     setChat(null);
 
     let results = null;
     let via = "match";
+    let sentPhotos = 0;
     try {
-      const imgs = (await Promise.all(images.slice(0, 4).map((i) => toSmallDataUrl(i.url)))).filter(Boolean);
+      const imgs = (await Promise.all(usePhotos.map((i) => toSmallDataUrl(i.url)))).filter(Boolean);
+      sentPhotos = imgs.length;
       const res = await fetch("/api/stylist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -90,11 +95,21 @@ export function MoodboardView() {
     }
 
     if (!results || !results.length) {
-      results = suggestProps({ tone, description: desc, limit: 6 });
-      via = "match";
+      results = suggestProps({
+        tone,
+        description: desc,
+        imageHints: uploads.map((i) => i.name || ""),
+        limit: 6,
+      });
+      via = uploads.length ? "match-photos" : "match";
     }
 
-    setChat({ intro: stylistIntro({ tone, description: desc, count: results.length }), results, via });
+    setChat({
+      intro: stylistIntro({ tone, description: desc, count: results.length, photos: sentPhotos || (via === "match-photos" ? uploads.length : 0) }),
+      results,
+      via,
+      thumbs: usePhotos.map((i) => i.url),
+    });
     setThinking(false);
   };
 
@@ -175,7 +190,7 @@ export function MoodboardView() {
           className="mt-3 rounded-full px-4 py-2.5 text-xs flex items-center gap-1.5 disabled:opacity-50"
           style={{ backgroundColor: C.highlight, color: C.white, fontFamily: "Jost, sans-serif", fontWeight: 500 }}
         >
-          <Sparkles size={14} /> {thinking ? "Thinking…" : "Suggest props for this space"}
+          <Sparkles size={14} /> {thinking ? "Thinking…" : usePhotos.length ? `Suggest from ${usePhotos.length} photo${usePhotos.length === 1 ? "" : "s"} + brief` : "Suggest props for this space"}
         </button>
 
         {(thinking || chat) && (
@@ -187,7 +202,7 @@ export function MoodboardView() {
               <span className="text-xs" style={{ color: C.primary, fontFamily: "Jost, sans-serif", fontWeight: 600 }}>PropConnect Stylist</span>
               {chat && (
                 <span className="text-[0.62rem] px-2 py-0.5 rounded-full" style={{ backgroundColor: C.bg, color: "#8AA2A6", fontFamily: "Jost, sans-serif" }}>
-                  {chat.via === "ai-photos" ? "read your photos + brief" : chat.via === "ai" ? "read your brief" : "attribute match"}
+                  {chat.via === "ai-photos" ? "read your photos + brief" : chat.via === "ai" ? "read your brief" : chat.via === "match-photos" ? "photo names + brief" : "attribute match"}
                 </span>
               )}
             </div>
@@ -196,6 +211,14 @@ export function MoodboardView() {
               <p className="text-sm" style={{ color: "#8AA2A6" }}>Looking through partner inventory…</p>
             ) : (
               <>
+                {chat.thumbs?.length > 0 && (
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-[0.68rem]" style={{ color: "#8AA2A6", fontFamily: "Jost, sans-serif" }}>Considering:</span>
+                    {chat.thumbs.map((u, i) => (
+                      <img key={i} src={u} alt="" className="w-9 h-9 rounded-lg object-cover" style={{ border: `1px solid ${C.line}` }} />
+                    ))}
+                  </div>
+                )}
                 <p className="text-sm mb-4" style={{ color: C.ink, fontFamily: "Jost, sans-serif" }}>{chat.intro}</p>
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {chat.results.map(({ prop, reason }) => (
