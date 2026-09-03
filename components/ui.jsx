@@ -146,7 +146,7 @@ function DimTag({ label, value }) {
   );
 }
 
-export function DimensionImage({ src, alt, h, w, d, seat }) {
+export function DimensionImage({ src, alt, h, w, d }) {
   const [spin, setSpin] = useState(false);
   const [rot, setRot] = useState({ x: 0, y: 0 });
 
@@ -204,16 +204,6 @@ export function DimensionImage({ src, alt, h, w, d, seat }) {
           <DimTag label="D" value={d} />
         </div>
 
-        {/* seat / anthropometric — up the right side, if provided */}
-        {seat && (
-          <div className="absolute flex flex-col items-center gap-1 pointer-events-none" style={{ right: 12, bottom: "10%", height: "34%" }}>
-            <span style={{ height: 1, width: 9, background: C.highlight }} />
-            <span className="flex-1" style={{ width: 1, background: C.highlight }} />
-            <span className="px-2 py-0.5 rounded-md text-[0.62rem] whitespace-nowrap" style={{ backgroundColor: C.highlight, color: C.white, fontFamily: "Jost, sans-serif", fontWeight: 600 }}>SEAT {seat}</span>
-            <span className="flex-1" style={{ width: 1, background: C.highlight }} />
-            <span style={{ height: 1, width: 9, background: C.highlight }} />
-          </div>
-        )}
       </div>
 
       {/* caption */}

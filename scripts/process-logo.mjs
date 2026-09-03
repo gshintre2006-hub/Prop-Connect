@@ -40,12 +40,19 @@ const keyed = () => sharp(Buffer.from(data), { raw: { width: W, height: H, chann
 // --- full lockup ---
 await keyed().png().trim({ threshold: 1 }).toFile(FULL);
 
-// --- monogram only: crop the top 56% (icon sits above the wordmark), then trim ---
+// --- monogram only: crop the top 56% (icon sits above the wordmark), trim,
+//     then add a transparent margin so nothing touches the edge (was clipping
+//     at the bottom in the nav) ---
 const topBuf = await keyed()
   .extract({ left: 0, top: 0, width: W, height: Math.round(H * 0.56) })
   .png()
   .toBuffer();
-await sharp(topBuf).trim({ threshold: 1 }).toFile(MARK);
+const trimmed = await sharp(topBuf).trim({ threshold: 1 }).toBuffer();
+const tm = await sharp(trimmed).metadata();
+const pad = Math.round(Math.max(tm.width, tm.height) * 0.09);
+await sharp(trimmed)
+  .extend({ top: pad, bottom: pad, left: pad, right: pad, background: { r: 0, g: 0, b: 0, alpha: 0 } })
+  .toFile(MARK);
 
 const [f, m] = await Promise.all([sharp(FULL).metadata(), sharp(MARK).metadata()]);
 console.log(`logo.png ${f.width}x${f.height} · logo-mark.png ${m.width}x${m.height}`);

@@ -1,21 +1,41 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ShoppingCart, X, Minus, Plus } from "lucide-react";
+import { ShoppingCart, X, Minus, Plus, FileDown } from "lucide-react";
 import { C } from "@/lib/tokens";
 import { storeById } from "@/lib/data";
 import { Button } from "@/components/ui";
+import { exportCartPdf } from "@/lib/cartPdf";
 import { useStore } from "@/app/providers";
 
 export function CartView() {
   const router = useRouter();
   const { cart, updateQty, removeItem } = useStore();
+  const [pdfBusy, setPdfBusy] = useState(false);
   const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
   const deposit = cart.reduce((s, i) => s + i.deposit * i.qty, 0);
 
+  const sharePdf = () => {
+    setPdfBusy(true);
+    try { exportCartPdf({ cart }); } finally { setPdfBusy(false); }
+  };
+
   return (
     <div className="max-w-[1000px] mx-auto px-5 sm:px-6 py-10">
-      <h1 style={{ color: C.primary, fontFamily: "Jost, sans-serif", fontWeight: 500 }} className="text-2xl mb-7">Your cart</h1>
+      <div className="flex items-center justify-between mb-7">
+        <h1 style={{ color: C.primary, fontFamily: "Jost, sans-serif", fontWeight: 500 }} className="text-2xl">Your cart</h1>
+        {cart.length > 0 && (
+          <button
+            onClick={sharePdf}
+            disabled={pdfBusy}
+            className="rounded-full px-4 py-2.5 text-xs flex items-center gap-1.5 disabled:opacity-40"
+            style={{ backgroundColor: C.primaryTint, color: C.primary, fontFamily: "Jost, sans-serif", fontWeight: 500 }}
+          >
+            <FileDown size={14} /> {pdfBusy ? "Building…" : "Share list as PDF"}
+          </button>
+        )}
+      </div>
 
       {cart.length === 0 ? (
         <div className="text-center py-20 rounded-2xl" style={{ backgroundColor: C.white, border: `1px solid ${C.line}` }}>

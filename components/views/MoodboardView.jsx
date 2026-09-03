@@ -6,10 +6,36 @@ import {
   UploadCloud, Image as ImageIcon, Plus, Trash2, Sparkles, FileDown, Check,
 } from "lucide-react";
 import { C } from "@/lib/tokens";
-import { storeById } from "@/lib/data";
+import { PROPS, storeById } from "@/lib/data";
 import { MOOD_TONES, suggestProps, stylistIntro } from "@/lib/stylist";
 import { exportMoodboardPdf } from "@/lib/moodboardPdf";
 import { useStore } from "@/app/providers";
+
+const PROP_BY_ID = Object.fromEntries(PROPS.map((p) => [p.id, p]));
+
+// Downscale a same-origin image (user upload) to a small JPEG data URL for the
+// vision request. Cross-origin images (stock prop photos) taint the canvas and
+// resolve null — they're skipped.
+function toSmallDataUrl(src, max = 768) {
+  return new Promise((resolve) => {
+    const im = new Image();
+    im.crossOrigin = "anonymous";
+    im.onload = () => {
+      try {
+        const s = Math.min(1, max / Math.max(im.width, im.height));
+        const c = document.createElement("canvas");
+        c.width = Math.round(im.width * s);
+        c.height = Math.round(im.height * s);
+        c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
+        resolve(c.toDataURL("image/jpeg", 0.8));
+      } catch {
+        resolve(null);
+      }
+    };
+    im.onerror = () => resolve(null);
+    im.src = src;
+  });
+}
 
 export function MoodboardView() {
   const router = useRouter();
@@ -36,14 +62,40 @@ export function MoodboardView() {
     );
   };
 
-  const askStylist = () => {
+  const askStylist = async () => {
     setThinking(true);
     setChat(null);
-    setTimeout(() => {
-      const results = suggestProps({ tone, description: desc, limit: 6 });
-      setChat({ intro: stylistIntro({ tone, description: desc, count: results.length }), results });
-      setThinking(false);
-    }, 700);
+
+    let results = null;
+    let via = "match";
+    try {
+      const imgs = (await Promise.all(images.slice(0, 4).map((i) => toSmallDataUrl(i.url)))).filter(Boolean);
+      const res = await fetch("/api/stylist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tone, description: desc, images: imgs }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const mapped = (data.picks || [])
+          .map((p) => ({ prop: PROP_BY_ID[p.id], reason: p.reason }))
+          .filter((x) => x.prop);
+        if (mapped.length) {
+          results = mapped;
+          via = imgs.length ? "ai-photos" : "ai";
+        }
+      }
+    } catch {
+      /* fall through to the local matcher */
+    }
+
+    if (!results || !results.length) {
+      results = suggestProps({ tone, description: desc, limit: 6 });
+      via = "match";
+    }
+
+    setChat({ intro: stylistIntro({ tone, description: desc, count: results.length }), results, via });
+    setThinking(false);
   };
 
   const addProp = (prop) => {
@@ -133,6 +185,11 @@ export function MoodboardView() {
                 <Sparkles size={13} color={C.white} />
               </div>
               <span className="text-xs" style={{ color: C.primary, fontFamily: "Jost, sans-serif", fontWeight: 600 }}>PropConnect Stylist</span>
+              {chat && (
+                <span className="text-[0.62rem] px-2 py-0.5 rounded-full" style={{ backgroundColor: C.bg, color: "#8AA2A6", fontFamily: "Jost, sans-serif" }}>
+                  {chat.via === "ai-photos" ? "read your photos + brief" : chat.via === "ai" ? "read your brief" : "attribute match"}
+                </span>
+              )}
             </div>
 
             {thinking ? (
@@ -184,20 +241,20 @@ export function MoodboardView() {
         onDragLeave={() => setDragging(false)}
         onDrop={(e) => { e.preventDefault(); setDragging(false); handleFiles(e.dataTransfer.files); }}
         onClick={() => fileInputRef.current?.click()}
-        className="w-full rounded-3xl flex flex-col items-center justify-center text-center cursor-pointer transition-colors"
+        className="w-full rounded-2xl flex items-center gap-3 cursor-pointer transition-colors px-4 py-3.5"
         style={{
-          minHeight: "180px",
-          padding: "28px 16px",
-          border: `2px dashed ${dragging ? C.highlight : C.line}`,
+          border: `1.5px dashed ${dragging ? C.highlight : C.line}`,
           backgroundColor: dragging ? C.accent : C.white,
         }}
       >
         <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => { handleFiles(e.target.files); e.target.value = ""; }} />
-        <div className="w-12 h-12 rounded-full flex items-center justify-center mb-3" style={{ backgroundColor: C.primaryTint }}>
-          <UploadCloud size={22} color={C.primary} />
+        <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: C.primaryTint }}>
+          <UploadCloud size={16} color={C.primary} />
         </div>
-        <p className="text-sm" style={{ color: C.ink, fontFamily: "Jost, sans-serif", fontWeight: 500 }}>Drag photos here, or click to browse</p>
-        <p className="text-xs mt-1.5" style={{ color: "#9AAEB1" }}>Your space shots, set references, inspiration — add anytime</p>
+        <div className="min-w-0">
+          <p className="text-sm" style={{ color: C.ink, fontFamily: "Jost, sans-serif", fontWeight: 500 }}>Drag photos here, or click to browse</p>
+          <p className="text-[0.72rem]" style={{ color: "#9AAEB1" }}>Space shots, set references, inspiration — add anytime</p>
+        </div>
       </div>
 
       {images.length === 0 ? (
