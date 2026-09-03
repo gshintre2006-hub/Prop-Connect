@@ -1,19 +1,21 @@
 "use client";
 
-import { Ruler } from "lucide-react";
+import { useState } from "react";
+import { Ruler, RotateCw } from "lucide-react";
 import { C } from "@/lib/tokens";
 import { JOURNEY_STEPS } from "@/lib/data";
 import { LOGO_FULL, LOGO_MARK } from "@/lib/logos";
 
 /* ---------------------------------------------------------------------- */
 /*  LOGO                                                                   */
-/*  variant="full" -> full stacked lockup (login / hero / footer)         */
-/*  variant="mark" -> icon crop + typeset wordmark for the slim navbar    */
+/*  variant="full" -> full stacked lockup (login / footer)                */
+/*  variant="mark" -> PC monogram only, no wordmark (home nav)            */
 /* ---------------------------------------------------------------------- */
-export function Logo({ size = 40 }) {
+export function Logo({ size = 40, variant = "full" }) {
+  const mark = variant === "mark";
   return (
     <img
-      src={LOGO_FULL}
+      src={mark ? LOGO_MARK : LOGO_FULL}
       alt="PropConnect — Find. Connect. Create."
       style={{ height: size, width: "auto", display: "block" }}
       className="select-none"
@@ -129,25 +131,111 @@ export function JourneyTracker({ statusIndex }) {
 }
 
 /* ---------------------------------------------------------------------- */
-/*  DIMENSION OVERLAY ON IMAGE                                             */
+/*  DIMENSION + 360° VIEW ON IMAGE                                         */
+/*  Dimension lines (feet-inches) drawn along the edges, plus a pointer-   */
+/*  driven pseudo-360 tilt of the photo.                                  */
 /* ---------------------------------------------------------------------- */
-export function DimensionImage({ src, alt, h, w, d }) {
+function DimTag({ label, value }) {
   return (
-    <div className="relative rounded-2xl overflow-hidden" style={{ border: `1px solid ${C.line}` }}>
-      <img src={src} alt={alt} className="w-full h-[360px] sm:h-[420px] object-cover" />
-      <div className="absolute top-3 left-3 flex items-center gap-1.5 rounded-full px-2.5 py-1 backdrop-blur-sm" style={{ backgroundColor: "rgba(255,255,255,0.85)" }}>
+    <span
+      className="px-2 py-0.5 rounded-md text-[0.62rem] whitespace-nowrap"
+      style={{ backgroundColor: C.primary, color: C.white, fontFamily: "Jost, sans-serif", fontWeight: 600, letterSpacing: "0.02em" }}
+    >
+      {label} {value}
+    </span>
+  );
+}
+
+export function DimensionImage({ src, alt, h, w, d, seat }) {
+  const [spin, setSpin] = useState(false);
+  const [rot, setRot] = useState({ x: 0, y: 0 });
+
+  const onMove = (e) => {
+    if (!spin) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width - 0.5;
+    const py = (e.clientY - r.top) / r.height - 0.5;
+    setRot({ x: -py * 12, y: px * 24 });
+  };
+  const rest = () => setRot({ x: 0, y: 0 });
+  const line = C.primary;
+
+  return (
+    <div className="relative rounded-2xl overflow-hidden" style={{ border: `1px solid ${C.line}`, backgroundColor: C.bg }}>
+      <div
+        className="relative"
+        style={{ perspective: "1100px", cursor: spin ? "grab" : "default" }}
+        onMouseMove={onMove}
+        onMouseLeave={rest}
+      >
+        <img
+          src={src}
+          alt={alt}
+          draggable={false}
+          className="w-full h-[360px] sm:h-[440px] object-contain select-none"
+          style={{
+            transform: `rotateX(${rot.x}deg) rotateY(${rot.y}deg)`,
+            transition: spin ? "transform 70ms linear" : "transform 320ms ease",
+            padding: "34px 40px",
+          }}
+        />
+
+        {/* width — along the top */}
+        <div className="absolute flex items-center gap-1 pointer-events-none" style={{ top: 12, left: "8%", right: "8%" }}>
+          <span style={{ width: 1, height: 9, background: line }} />
+          <span className="flex-1" style={{ height: 1, background: line }} />
+          <DimTag label="W" value={w} />
+          <span className="flex-1" style={{ height: 1, background: line }} />
+          <span style={{ width: 1, height: 9, background: line }} />
+        </div>
+
+        {/* height — down the left */}
+        <div className="absolute flex flex-col items-center gap-1 pointer-events-none" style={{ left: 12, top: "16%", bottom: "10%" }}>
+          <span style={{ height: 1, width: 9, background: line }} />
+          <span className="flex-1" style={{ width: 1, background: line }} />
+          <DimTag label="H" value={h} />
+          <span className="flex-1" style={{ width: 1, background: line }} />
+          <span style={{ height: 1, width: 9, background: line }} />
+        </div>
+
+        {/* depth — short diagonal, top right */}
+        <div className="absolute flex items-center gap-1 pointer-events-none" style={{ top: 44, right: "9%" }}>
+          <span style={{ width: 30, height: 1, background: line, transform: "rotate(30deg)", transformOrigin: "right center" }} />
+          <DimTag label="D" value={d} />
+        </div>
+
+        {/* seat / anthropometric — up the right side, if provided */}
+        {seat && (
+          <div className="absolute flex flex-col items-center gap-1 pointer-events-none" style={{ right: 12, bottom: "10%", height: "34%" }}>
+            <span style={{ height: 1, width: 9, background: C.highlight }} />
+            <span className="flex-1" style={{ width: 1, background: C.highlight }} />
+            <span className="px-2 py-0.5 rounded-md text-[0.62rem] whitespace-nowrap" style={{ backgroundColor: C.highlight, color: C.white, fontFamily: "Jost, sans-serif", fontWeight: 600 }}>SEAT {seat}</span>
+            <span className="flex-1" style={{ width: 1, background: C.highlight }} />
+            <span style={{ height: 1, width: 9, background: C.highlight }} />
+          </div>
+        )}
+      </div>
+
+      {/* caption */}
+      <div className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full px-2.5 py-1 backdrop-blur-sm" style={{ backgroundColor: "rgba(255,255,255,0.88)" }}>
         <Ruler size={12} color={C.primary} />
-        <span className="text-[0.65rem]" style={{ color: C.primary, fontFamily: "Jost, sans-serif" }}>Actual size shown</span>
+        <span className="text-[0.62rem]" style={{ color: C.primary, fontFamily: "Jost, sans-serif" }}>Dimensions in ft-in</span>
       </div>
-      <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 rounded-full px-2.5 py-1" style={{ backgroundColor: C.primary }}>
-        <span className="text-[0.68rem] text-white" style={{ fontFamily: "Jost, sans-serif" }}>H {h}</span>
-      </div>
-      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 rounded-full px-2.5 py-1" style={{ backgroundColor: C.highlight }}>
-        <span className="text-[0.68rem] text-white" style={{ fontFamily: "Jost, sans-serif" }}>W {w}</span>
-      </div>
-      <div className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full px-2.5 py-1" style={{ backgroundColor: C.secondary }}>
-        <span className="text-[0.68rem] text-white" style={{ fontFamily: "Jost, sans-serif" }}>D {d}</span>
-      </div>
+
+      {/* 360 toggle */}
+      <button
+        onClick={() => { setSpin((s) => !s); rest(); }}
+        className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[0.68rem]"
+        style={{
+          backgroundColor: spin ? C.primary : "rgba(255,255,255,0.92)",
+          color: spin ? C.white : C.primary,
+          border: `1px solid ${spin ? C.primary : C.line}`,
+          fontFamily: "Jost, sans-serif",
+          fontWeight: 600,
+        }}
+      >
+        <RotateCw size={12} /> {spin ? "Move to rotate" : "360° view"}
+      </button>
     </div>
   );
 }

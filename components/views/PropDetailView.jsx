@@ -25,7 +25,7 @@ export function PropDetailView({ prop }) {
 
       <div className="grid lg:grid-cols-[1.15fr,0.85fr] gap-10">
         <div>
-          <DimensionImage src={prop.img} alt={prop.name} h={prop.h} w={prop.w} d={prop.d} />
+          <DimensionImage src={prop.img} alt={prop.name} h={prop.h} w={prop.w} d={prop.d} seat={prop.seat} />
           <div className="grid grid-cols-3 gap-3 mt-3">
             {[prop.img, store.photos[0], store.photos[1]].map((im, i) => (
               <img key={i} src={im} className="w-full h-[80px] object-cover rounded-xl" style={{ border: `1px solid ${C.line}` }} alt="" />

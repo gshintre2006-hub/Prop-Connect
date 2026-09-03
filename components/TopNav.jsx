@@ -56,8 +56,8 @@ export function TopNav() {
       <div className="sticky top-0 z-40 backdrop-blur-md" style={{ backgroundColor: "rgba(250,239,237,0.92)", borderBottom: `1px solid ${C.line}` }}>
         <div className="max-w-[1200px] mx-auto px-4 sm:px-6">
           <div className="flex items-center gap-6 h-[64px] sm:h-[68px]">
-            <button onClick={() => router.push("/")} className="shrink-0">
-              <Logo size={40} />
+            <button onClick={() => router.push("/")} className="shrink-0 flex items-center">
+              <Logo variant={pathname === "/" ? "mark" : "full"} size={pathname === "/" ? 42 : 38} />
             </button>
 
             <nav className="hidden md:flex items-center gap-1 ml-1 shrink-0">
