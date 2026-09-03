@@ -6,8 +6,9 @@ import {
 } from "lucide-react";
 import { C } from "@/lib/tokens";
 import { PROPS } from "@/lib/data";
-import { Button, SectionTitle, Footer } from "@/components/ui";
+import { Footer } from "@/components/ui";
 import { PropCard } from "@/components/PropCard";
+import { StoreMap } from "@/components/StoreMap";
 import { useStore } from "@/app/providers";
 
 export function StoreDetailView({ store }) {
@@ -69,15 +70,7 @@ export function StoreDetailView({ store }) {
             <div className="rounded-2xl p-5 mb-4" style={{ backgroundColor: C.white, border: `1px solid ${C.line}` }}>
               <h4 className="text-sm mb-3 flex items-center gap-1.5" style={{ color: C.primary, fontFamily: "Jost, sans-serif", fontWeight: 500 }}><MapPin size={14} /> Location</h4>
               <p className="text-xs mb-3" style={{ color: "#6B8489" }}>{store.address}</p>
-              <div className="rounded-xl h-[150px] flex items-center justify-center" style={{ backgroundColor: C.primaryTint }}>
-                <div className="text-center">
-                  <MapPin size={20} color={C.primary} className="mx-auto mb-1" />
-                  <span className="text-[0.7rem]" style={{ color: C.primary, fontFamily: "Jost, sans-serif" }}>Map preview</span>
-                </div>
-              </div>
-              <Button variant="outline" size="sm" className="w-full mt-3" onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(store.address)}`, "_blank")}>
-                Get directions
-              </Button>
+              <StoreMap store={store} />
             </div>
             <div className="rounded-2xl p-5" style={{ backgroundColor: C.white, border: `1px solid ${C.line}` }}>
               <h4 className="text-sm mb-3" style={{ color: C.primary, fontFamily: "Jost, sans-serif", fontWeight: 500 }}>Contact</h4>
