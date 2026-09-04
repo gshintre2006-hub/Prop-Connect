@@ -72,6 +72,7 @@ export function MoodboardView() {
     let results = null;
     let via = "match";
     let sentPhotos = 0;
+    let providerLabel = "";
     try {
       const imgs = (await Promise.all(usePhotos.map((i) => toSmallDataUrl(i.url)))).filter(Boolean);
       sentPhotos = imgs.length;
@@ -88,6 +89,7 @@ export function MoodboardView() {
         if (mapped.length) {
           results = mapped;
           via = imgs.length ? "ai-photos" : "ai";
+          providerLabel = data.provider === "gemini" ? "Gemini" : "Claude";
         }
       }
     } catch {
@@ -108,6 +110,7 @@ export function MoodboardView() {
       intro: stylistIntro({ tone, description: desc, count: results.length, photos: sentPhotos || (via === "match-photos" ? uploads.length : 0) }),
       results,
       via,
+      providerLabel,
       thumbs: usePhotos.map((i) => i.url),
     });
     setThinking(false);
@@ -199,7 +202,9 @@ export function MoodboardView() {
               <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: C.primary }}>
                 <Sparkles size={13} color={C.white} />
               </div>
-              <span className="text-xs" style={{ color: C.primary, fontFamily: "Jost, sans-serif", fontWeight: 600 }}>PropConnect Stylist</span>
+              <span className="text-xs" style={{ color: C.primary, fontFamily: "Jost, sans-serif", fontWeight: 600 }}>
+                PropConnect Stylist{chat?.providerLabel ? ` · ${chat.providerLabel}` : ""}
+              </span>
               {chat && (
                 <span className="text-[0.62rem] px-2 py-0.5 rounded-full" style={{ backgroundColor: C.bg, color: "#8AA2A6", fontFamily: "Jost, sans-serif" }}>
                   {chat.via === "ai-photos" ? "read your photos + brief" : chat.via === "ai" ? "read your brief" : chat.via === "match-photos" ? "photo names + brief" : "attribute match"}
