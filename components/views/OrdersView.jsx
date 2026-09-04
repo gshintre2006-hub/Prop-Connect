@@ -31,8 +31,16 @@ export function OrdersView() {
             <div key={o.orderId} className="rounded-2xl p-6" style={{ backgroundColor: C.white, border: `1px solid ${C.line}` }}>
               <div className="flex items-center justify-between mb-5">
                 <div>
-                  <div className="text-sm" style={{ color: C.primary, fontFamily: "Jost, sans-serif", fontWeight: 600 }}>Order #{o.orderId}</div>
-                  <div className="text-[0.72rem]" style={{ color: "#8AA2A6" }}>{o.items.length} item(s) · Placed {o.date}</div>
+                  <div className="text-sm flex items-center gap-2" style={{ color: C.primary, fontFamily: "Jost, sans-serif", fontWeight: 600 }}>
+                    Order #{o.orderId}
+                    {o.paymentStatus === "paid" && <Pill tone="good">Paid</Pill>}
+                    {o.paymentStatus === "cod" && <Pill tone="accent">COD</Pill>}
+                    {o.paymentStatus === "invoiced" && <Pill tone="muted">Invoiced</Pill>}
+                  </div>
+                  <div className="text-[0.72rem]" style={{ color: "#8AA2A6" }}>
+                    {o.items.length} item(s) · Placed {o.date}
+                    {o.paymentId ? ` · ${o.paymentId}` : ""}
+                  </div>
                 </div>
                 <Pill tone="muted">{JOURNEY_STEPS[o.statusIndex].label}</Pill>
               </div>

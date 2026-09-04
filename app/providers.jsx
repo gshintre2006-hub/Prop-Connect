@@ -124,10 +124,14 @@ function StoreProvider({ children }) {
     );
   };
 
-  const placeOrder = () => {
+  const placeOrder = (meta = {}) => {
     const orderId = Math.floor(10000 + Math.random() * 89999);
-    setOrders((o) => [{ orderId, items: cart, date: "Today", statusIndex: 1 }, ...o]);
-    notify(`Order #${orderId} — Confirmed`, `${cart.length} item(s) confirmed with the store.`, orderId);
+    setOrders((o) => [{ orderId, items: cart, date: "Today", statusIndex: 1, ...meta }, ...o]);
+    const paidNote =
+      meta.paymentStatus === "paid" ? "Payment received. " :
+      meta.paymentStatus === "cod" ? "Cash on delivery. " :
+      meta.paymentStatus === "invoiced" ? "Billed to your studio account. " : "";
+    notify(`Order #${orderId} — Confirmed`, `${paidNote}${cart.length} item(s) confirmed with the store.`, orderId);
     scheduleAdvance(orderId);
     setCart([]);
     return orderId;
