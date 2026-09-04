@@ -3,6 +3,19 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { readAvatar, writeAvatar } from "@/lib/avatar";
+
+/* An old build stored the profile photo as a base64 data URL in user_metadata,
+   which rides inside the session JWT / auth cookie and eventually trips
+   Vercel's 494 REQUEST_HEADER_TOO_LARGE. Move any such value to this device
+   and strip it from the account so the cookie shrinks on the next refresh. */
+function debloatAvatar(supabase, u) {
+  const v = u?.user_metadata?.avatar_url;
+  if (typeof v === "string" && v.startsWith("data:")) {
+    try { if (!readAvatar()) writeAvatar(v); } catch {}
+    supabase.auth.updateUser({ data: { avatar_url: null } }).catch(() => {});
+  }
+}
 
 const AuthContext = createContext(null);
 const NOT_CONFIGURED = {
@@ -23,12 +36,15 @@ export function AuthProvider({ children }) {
 
     supabase.auth.getSession().then(({ data }) => {
       if (!active) return;
-      setUser(data.session?.user ?? null);
+      const u = data.session?.user ?? null;
+      setUser(u);
       setLoading(false);
+      if (u) debloatAvatar(supabase, u);
     });
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
+      if (session?.user) debloatAvatar(supabase, session.user);
     });
 
     return () => {

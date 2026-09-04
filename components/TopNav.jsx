@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { C } from "@/lib/tokens";
 import { Logo } from "./ui";
+import { readAvatar, onAvatarChange } from "@/lib/avatar";
 import { useStore } from "@/app/providers";
 import { useAuth } from "./AuthProvider";
 
@@ -41,6 +42,13 @@ export function TopNav() {
   const router = useRouter();
   const { cart, favs, favStores, notifications, unreadCount, markNotificationsRead, clearNotifications } = useStore();
   const { user, signOut } = useAuth();
+  const [avatar, setAvatar] = useState("");
+  useEffect(() => {
+    const sync = () => setAvatar(readAvatar());
+    sync();
+    return onAvatarChange(sync);
+  }, []);
+  const avatarSrc = avatar || user?.user_metadata?.picture || "";
 
   const cartCount = cart.reduce((s, i) => s + i.qty, 0);
   const savedCount = favs.length + favStores.length;
@@ -184,8 +192,8 @@ export function TopNav() {
                     style={{ backgroundColor: C.primary, color: C.white, fontFamily: "Jost, sans-serif" }}
                     title={user.email}
                   >
-                    {user.user_metadata?.avatar_url || user.user_metadata?.picture ? (
-                      <img src={user.user_metadata.avatar_url || user.user_metadata.picture} alt="" className="w-full h-full object-cover" />
+                    {avatarSrc ? (
+                      <img src={avatarSrc} alt="" className="w-full h-full object-cover" />
                     ) : (
                       (user.email || "?").slice(0, 1).toUpperCase()
                     )}

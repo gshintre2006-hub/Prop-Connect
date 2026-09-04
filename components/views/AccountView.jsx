@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { LogOut, Check, Camera, Trash2 } from "lucide-react";
 import { C } from "@/lib/tokens";
 import { Button } from "@/components/ui";
+import { readAvatar, writeAvatar } from "@/lib/avatar";
 import { useAuth } from "@/components/AuthProvider";
 
 function Field({ label, value, onChange, placeholder, disabled }) {
@@ -23,8 +24,7 @@ function Field({ label, value, onChange, placeholder, disabled }) {
   );
 }
 
-// Resize any picked image to a 256px square JPEG data URL (small enough to
-// live in user_metadata — no storage bucket needed).
+// Resize any picked image to a 256px square JPEG data URL, kept on this device.
 function fileToAvatarDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -42,7 +42,7 @@ function fileToAvatarDataUrl(file) {
         const w = im.width * scale;
         const h = im.height * scale;
         ctx.drawImage(im, (S - w) / 2, (S - h) / 2, w, h);
-        resolve(canvas.toDataURL("image/jpeg", 0.82));
+        resolve(canvas.toDataURL("image/jpeg", 0.8));
       };
       im.src = reader.result;
     };
@@ -70,8 +70,16 @@ export function AccountView() {
     setFullName(m.full_name ?? m.name ?? "");
     setPhone(m.phone ?? "");
     setCompany(m.company ?? "");
-    setAvatar(m.avatar_url ?? m.picture ?? "");
-  }, [user]);
+    // Prefer the on-device photo; fall back to the Google picture.
+    setAvatar(readAvatar() || m.picture || "");
+    // One-time cleanup: an old build stored a base64 avatar in user_metadata,
+    // which bloats the auth cookie. Move it to this device and strip it.
+    if (typeof m.avatar_url === "string" && m.avatar_url.startsWith("data:")) {
+      if (!readAvatar()) writeAvatar(m.avatar_url);
+      setAvatar(readAvatar());
+      updateProfile({ avatar_url: null }).catch(() => {});
+    }
+  }, [user, updateProfile]);
 
   if (loading || !user) {
     return (
@@ -89,8 +97,7 @@ export function AccountView() {
     setPhotoBusy(true);
     try {
       const dataUrl = await fileToAvatarDataUrl(file);
-      const { error: err } = await updateProfile({ avatar_url: dataUrl });
-      if (err) throw new Error(err.message);
+      writeAvatar(dataUrl);
       setAvatar(dataUrl);
     } catch (err) {
       setError(err.message || "Couldn't update the photo.");
@@ -99,13 +106,9 @@ export function AccountView() {
     }
   };
 
-  const removePhoto = async () => {
-    setError("");
-    setPhotoBusy(true);
-    const { error: err } = await updateProfile({ avatar_url: "" });
-    setPhotoBusy(false);
-    if (err) setError(err.message);
-    else setAvatar("");
+  const removePhoto = () => {
+    writeAvatar(null);
+    setAvatar(user.user_metadata?.picture || "");
   };
 
   const save = async (e) => {
@@ -171,6 +174,7 @@ export function AccountView() {
                 </button>
               )}
             </div>
+            <div className="text-[0.62rem] mt-1" style={{ color: "#B7C4C6" }}>Saved on this device</div>
           </div>
         </div>
 
