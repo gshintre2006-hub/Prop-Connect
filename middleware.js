@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { SUPABASE_URL, SUPABASE_ANON_KEY, isSupabaseConfigured, REQUIRE_AUTH } from "@/lib/supabase/config";
+import { isAdminEmail } from "@/lib/adminEmails";
 
 // The only consumer-app routes reachable while signed out. Everything else
 // needs a session (subject to REQUIRE_AUTH below).
@@ -61,12 +62,16 @@ export async function middleware(request) {
   const { data: { user } } = await supabase.auth.getUser();
 
   const isVendorRoute = path === "/vendor" || path.startsWith("/vendor/");
+  const isAdminRoute = path === "/admin" || path.startsWith("/admin/");
   const loginPath = isVendorRoute ? "/vendor/login" : "/login";
 
   let gated;
   if (isVendorRoute) {
     // The Vendor Portal always needs a session, regardless of REQUIRE_AUTH.
     gated = !VENDOR_PUBLIC.some((p) => path === p);
+  } else if (isAdminRoute) {
+    // The Admin Console always needs a session too.
+    gated = true;
   } else {
     const isPublic = PUBLIC.some((p) => path === p || path.startsWith(`${p}/`));
     // /account always needs a session; everything else only when REQUIRE_AUTH is on.
@@ -79,6 +84,14 @@ export async function middleware(request) {
     url.pathname = loginPath;
     url.search = "";
     url.searchParams.set("redirectTo", path);
+    return NextResponse.redirect(url);
+  }
+
+  // Signed in but not an admin -> bounce off the Admin Console entirely.
+  if (isAdminRoute && user && !isAdminEmail(user.email)) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/";
+    url.search = "";
     return NextResponse.redirect(url);
   }
 

@@ -16,10 +16,12 @@ export async function GET() {
     anthropic: has(e.ANTHROPIC_API_KEY),
     razorpayKeyId: has(e.NEXT_PUBLIC_RAZORPAY_KEY_ID) || has(e.RAZORPAY_KEY_ID),
     razorpaySecret: has(e.RAZORPAY_KEY_SECRET),
+    adminEmails: (e.NEXT_PUBLIC_ADMIN_EMAILS || "").split(",").map((s) => s.trim()).filter(Boolean).length,
+    supabaseServiceRole: has(e.SUPABASE_SERVICE_ROLE_KEY),
     requireAuth: e.NEXT_PUBLIC_REQUIRE_AUTH !== "false",
     // names only, no values — helps spot typos / wrong prefixes
     relevantEnvNames: Object.keys(e)
-      .filter((k) => /GOOGLE|MAPS?_KEY|GEMINI|RAZORPAY|ANTHROPIC|SUPABASE/i.test(k))
+      .filter((k) => /GOOGLE|MAPS?_KEY|GEMINI|RAZORPAY|ANTHROPIC|SUPABASE|ADMIN/i.test(k))
       .sort(),
   });
 }

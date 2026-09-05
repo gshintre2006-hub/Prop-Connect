@@ -4,11 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Search, ShoppingCart, User, Home as HomeIcon, Store, ClipboardList,
-  Image as ImageIcon, LogOut, LogIn, Bell, Heart, Trash2,
+  Image as ImageIcon, LogOut, LogIn, Bell, Heart, Trash2, ShieldCheck,
 } from "lucide-react";
 import { C } from "@/lib/tokens";
 import { Logo } from "./ui";
 import { readAvatar, onAvatarChange } from "@/lib/avatar";
+import { isAdminEmail } from "@/lib/adminEmails";
 import { useStore } from "@/app/providers";
 import { useAuth } from "./AuthProvider";
 
@@ -208,6 +209,7 @@ export function TopNav() {
                         { label: "Profile", icon: User, to: "/account" },
                         { label: "Saved items", icon: Heart, to: "/saved" },
                         { label: "My rentals", icon: ClipboardList, to: "/orders" },
+                        ...(isAdminEmail(user.email) ? [{ label: "Admin Console", icon: ShieldCheck, to: "/admin" }] : []),
                       ].map((m) => (
                         <button
                           key={m.to}
