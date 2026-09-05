@@ -40,8 +40,9 @@ export async function GET(request) {
 
   const { error } = await supabase.auth.exchangeCodeForSession(code);
   if (error) {
+    const loginPath = dest.startsWith("/vendor") ? "/vendor/login" : "/login";
     return NextResponse.redirect(
-      `${origin}/login?error=${encodeURIComponent(error.message)}`
+      `${origin}${loginPath}?error=${encodeURIComponent(error.message)}`
     );
   }
 

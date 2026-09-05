@@ -17,12 +17,22 @@ function humanise(raw) {
 
 export function VendorLoginView({ redirectTo = "/vendor", initialError = "" }) {
   const router = useRouter();
-  const { user, loading, configured, signInWithEmail } = useAuth();
+  const { user, loading, configured, signInWithEmail, signInWithGoogle } = useAuth();
 
   const [email, setEmail] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState("");        // "" | "email" | "google"
   const [sent, setSent] = useState(false);
   const [error, setError] = useState(initialError ? humanise(initialError) : "");
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const h = window.location.hash;
+    if (h && /error/i.test(h)) {
+      const p = new URLSearchParams(h.replace(/^#/, ""));
+      setError(humanise(p.get("error_description") || p.get("error") || ""));
+      window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    }
+  }, []);
 
   useEffect(() => {
     if (!loading && user) router.replace(redirectTo);
@@ -35,11 +45,18 @@ export function VendorLoginView({ redirectTo = "/vendor", initialError = "" }) {
       setError("Enter a valid email address.");
       return;
     }
-    setBusy(true);
+    setBusy("email");
     const { error: authError } = await signInWithEmail(email.trim(), redirectTo);
-    setBusy(false);
+    setBusy("");
     if (authError) setError(humanise(authError.message));
     else setSent(true);
+  };
+
+  const google = async () => {
+    setError("");
+    setBusy("google");
+    const { error: authError } = await signInWithGoogle(redirectTo);
+    if (authError) { setError(humanise(authError.message)); setBusy(""); }
   };
 
   return (
@@ -106,14 +123,31 @@ export function VendorLoginView({ redirectTo = "/vendor", initialError = "" }) {
               </div>
               <button
                 type="submit"
-                disabled={busy}
+                disabled={busy !== ""}
                 className="w-full rounded-full py-3.5 text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50"
                 style={{ backgroundColor: C.primary, color: C.white, fontFamily: "Jost, sans-serif", fontWeight: 500 }}
               >
-                <Mail size={15} /> {busy ? "Sending…" : "Email me a sign-in link"}
+                <Mail size={15} /> {busy === "email" ? "Sending…" : "Email me a sign-in link"}
               </button>
             </form>
           )}
+
+          <div className="flex items-center gap-3 my-5">
+            <div className="h-px flex-1" style={{ backgroundColor: C.line }} />
+            <span className="text-[0.7rem]" style={{ color: "#9AAEB1", fontFamily: "Jost, sans-serif" }}>or</span>
+            <div className="h-px flex-1" style={{ backgroundColor: C.line }} />
+          </div>
+
+          <button
+            type="button"
+            onClick={google}
+            disabled={busy !== ""}
+            className="w-full rounded-full py-3.5 text-sm flex items-center justify-center gap-2.5 transition-all disabled:opacity-50"
+            style={{ border: `1.3px solid ${C.line}`, color: C.ink, fontFamily: "Jost, sans-serif", fontWeight: 500 }}
+          >
+            <span style={{ fontWeight: 700, color: "#4285F4", fontSize: "1rem" }}>G</span>
+            {busy === "google" ? "Redirecting to Google…" : "Continue with Google"}
+          </button>
 
           <p className="text-[0.7rem] mt-5 text-center" style={{ color: "#9AAEB1" }}>
             Every vendor sees only their own inventory. Find. Connect. Create.
