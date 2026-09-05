@@ -1,13 +1,9 @@
 import { NextResponse } from "next/server";
 import { PROPS } from "@/lib/data";
+import { fetchAllVendorProps } from "@/lib/vendor";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-const CATALOG = PROPS.map(
-  (p) => `${p.id} | ${p.name} | ${p.category} | ${p.style} | ${p.material} | ${p.era} | ${p.color} | ${p.available ? "available" : "booked"}`
-).join("\n");
-const VALID_IDS = new Set(PROPS.map((p) => p.id));
 
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 
@@ -92,6 +88,12 @@ export async function POST(request) {
   } catch {
     return NextResponse.json({ error: "bad_request" }, { status: 400 });
   }
+
+  const catalogProps = [...PROPS, ...(await fetchAllVendorProps())];
+  const CATALOG = catalogProps
+    .map((p) => `${p.id} | ${p.name} | ${p.category} | ${p.style} | ${p.material} | ${p.era} | ${p.color} | ${p.available ? "available" : "booked"}`)
+    .join("\n");
+  const VALID_IDS = new Set(catalogProps.map((p) => p.id));
 
   const tone = String(body.tone || "").slice(0, 40);
   const description = String(body.description || "").slice(0, 600);

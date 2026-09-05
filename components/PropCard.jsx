@@ -3,12 +3,13 @@
 import { useRouter } from "next/navigation";
 import { Heart, Store, Plus } from "lucide-react";
 import { C } from "@/lib/tokens";
-import { storeById } from "@/lib/data";
 import { Pill } from "./ui";
+import { useStore } from "@/app/providers";
 
 export function PropCard({ p, onOpen, onFav, isFav, onAdd }) {
   const router = useRouter();
-  const store = storeById(p.storeId);
+  const { findStore } = useStore();
+  const store = findStore(p.storeId) || {};
   const open = onOpen ? () => onOpen(p) : () => router.push(`/props/${p.id}`);
 
   return (

@@ -6,16 +6,15 @@ import {
   Phone, MessageCircle,
 } from "lucide-react";
 import { C } from "@/lib/tokens";
-import { PROPS, storeById } from "@/lib/data";
 import { DimensionImage, SectionTitle, Button, Pill } from "@/components/ui";
 import { PropCard } from "@/components/PropCard";
 import { useStore } from "@/app/providers";
 
 export function PropDetailView({ prop }) {
   const router = useRouter();
-  const { favs, toggleFav, addToCart } = useStore();
-  const store = storeById(prop.storeId);
-  const related = PROPS.filter((p) => p.category === prop.category && p.id !== prop.id).slice(0, 4);
+  const { favs, toggleFav, addToCart, findStore, allProps } = useStore();
+  const store = findStore(prop.storeId) || {};
+  const related = allProps.filter((p) => p.category === prop.category && p.id !== prop.id).slice(0, 4);
 
   return (
     <div className="max-w-[1200px] mx-auto px-5 sm:px-6 py-8">
@@ -27,7 +26,7 @@ export function PropDetailView({ prop }) {
         <div>
           <DimensionImage src={prop.img} alt={prop.name} h={prop.h} w={prop.w} d={prop.d} />
           <div className="grid grid-cols-3 gap-3 mt-3">
-            {[prop.img, store.photos[0], store.photos[1]].map((im, i) => (
+            {[prop.img, store.photos?.[0], store.photos?.[1]].filter(Boolean).map((im, i) => (
               <img key={i} src={im} className="w-full h-[80px] object-cover rounded-xl" style={{ border: `1px solid ${C.line}` }} alt="" />
             ))}
           </div>

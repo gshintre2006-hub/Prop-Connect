@@ -1,17 +1,14 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   UploadCloud, Image as ImageIcon, Plus, Trash2, Sparkles, FileDown, Check,
 } from "lucide-react";
 import { C } from "@/lib/tokens";
-import { PROPS, storeById } from "@/lib/data";
 import { MOOD_TONES, suggestProps, stylistIntro } from "@/lib/stylist";
 import { exportMoodboardPdf } from "@/lib/moodboardPdf";
 import { useStore } from "@/app/providers";
-
-const PROP_BY_ID = Object.fromEntries(PROPS.map((p) => [p.id, p]));
 
 // Downscale a same-origin image (user upload) to a small JPEG data URL for the
 // vision request. Cross-origin images (stock prop photos) taint the canvas and
@@ -39,7 +36,8 @@ function toSmallDataUrl(src, max = 768) {
 
 export function MoodboardView() {
   const router = useRouter();
-  const { moodboardImages: images, addMoodboardImages, removeMoodboardImage } = useStore();
+  const { moodboardImages: images, addMoodboardImages, removeMoodboardImage, allProps, findStore } = useStore();
+  const PROP_BY_ID = useMemo(() => Object.fromEntries(allProps.map((p) => [p.id, p])), [allProps]);
   const fileInputRef = useRef(null);
 
   const [dragging, setDragging] = useState(false);
@@ -102,6 +100,7 @@ export function MoodboardView() {
         description: desc,
         imageHints: uploads.map((i) => i.name || ""),
         limit: 6,
+        props: allProps,
       });
       via = uploads.length ? "match-photos" : "match";
     }
@@ -231,7 +230,7 @@ export function MoodboardView() {
                       <img src={prop.img} alt={prop.name} className="w-full h-24 object-cover" />
                       <div className="p-3">
                         <div className="text-[0.8rem] leading-tight" style={{ color: C.ink, fontFamily: "Jost, sans-serif", fontWeight: 600 }}>{prop.name}</div>
-                        <div className="text-[0.68rem] mt-0.5" style={{ color: "#8AA2A6" }}>{storeById(prop.storeId)?.name} · ₹{prop.price}/day</div>
+                        <div className="text-[0.68rem] mt-0.5" style={{ color: "#8AA2A6" }}>{findStore(prop.storeId)?.name} · ₹{prop.price}/day</div>
                         {reason && (
                           <div className="text-[0.66rem] mt-1" style={{ color: C.secondary }}>matches “{reason}”</div>
                         )}

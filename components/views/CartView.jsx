@@ -4,14 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ShoppingCart, X, Minus, Plus, FileDown } from "lucide-react";
 import { C } from "@/lib/tokens";
-import { storeById } from "@/lib/data";
 import { Button } from "@/components/ui";
 import { exportCartPdf } from "@/lib/cartPdf";
 import { useStore } from "@/app/providers";
 
 export function CartView() {
   const router = useRouter();
-  const { cart, updateQty, removeItem } = useStore();
+  const { cart, updateQty, removeItem, findStore } = useStore();
   const [pdfBusy, setPdfBusy] = useState(false);
   const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
   const deposit = cart.reduce((s, i) => s + i.deposit * i.qty, 0);
@@ -54,7 +53,7 @@ export function CartView() {
                     <h3 className="text-sm" style={{ color: C.ink, fontFamily: "Jost, sans-serif", fontWeight: 500 }}>{item.name}</h3>
                     <button onClick={() => removeItem(item.id)}><X size={15} color="#B7C4C6" /></button>
                   </div>
-                  <p className="text-[0.72rem] mt-0.5" style={{ color: "#8AA2A6" }}>{storeById(item.storeId).name} · ₹{item.price}/day</p>
+                  <p className="text-[0.72rem] mt-0.5" style={{ color: "#8AA2A6" }}>{findStore(item.storeId)?.name} · ₹{item.price}/day</p>
                   <div className="flex items-center justify-between mt-3">
                     <div className="flex items-center gap-3 rounded-full px-2 py-1" style={{ backgroundColor: C.primaryTint }}>
                       <button onClick={() => updateQty(item.id, -1)}><Minus size={13} color={C.primary} /></button>

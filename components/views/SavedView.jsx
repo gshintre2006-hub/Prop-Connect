@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import { Heart } from "lucide-react";
 import { C } from "@/lib/tokens";
-import { PROPS, STORES } from "@/lib/data";
 import { SectionTitle, Button } from "@/components/ui";
 import { PropCard } from "@/components/PropCard";
 import { StoreCard } from "@/components/StoreCard";
@@ -11,10 +10,10 @@ import { useStore } from "@/app/providers";
 
 export function SavedView() {
   const router = useRouter();
-  const { favs, favStores, toggleFav, addToCart } = useStore();
+  const { favs, favStores, toggleFav, addToCart, allProps, allStores } = useStore();
 
-  const savedProps = PROPS.filter((p) => favs.includes(p.id));
-  const savedStores = STORES.filter((s) => favStores.includes(s.id));
+  const savedProps = allProps.filter((p) => favs.includes(p.id));
+  const savedStores = allStores.filter((s) => favStores.includes(s.id));
   const empty = savedProps.length === 0 && savedStores.length === 0;
 
   return (

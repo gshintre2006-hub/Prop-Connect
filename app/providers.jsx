@@ -1,10 +1,11 @@
 "use client";
 
 import {
-  createContext, useContext, useState, useEffect, useRef, useCallback,
+  createContext, useContext, useState, useEffect, useRef, useCallback, useMemo,
 } from "react";
 import { AuthProvider } from "@/components/AuthProvider";
-import { JOURNEY_STEPS } from "@/lib/data";
+import { JOURNEY_STEPS, PROPS, STORES, _registerVendorStores } from "@/lib/data";
+import { fetchAllVendorProps, fetchAllVendorStores } from "@/lib/vendor";
 
 /* ---------------------------------------------------------------------- */
 /*  GLOBAL CLIENT STATE                                                    */
@@ -38,6 +39,8 @@ function StoreProvider({ children }) {
   const [orders, setOrders] = useState([]);
   const [moodboardImages, setMoodboardImages] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const [vendorProps, setVendorProps] = useState([]);
+  const [vendorStores, setVendorStores] = useState([]);
   const timers = useRef([]);
 
   /* hydrate + persist favourites (props + stores) */
@@ -45,6 +48,31 @@ function StoreProvider({ children }) {
     setFavs(readArr(LS_FAVS));
     setFavStores(readArr(LS_FAV_STORES));
   }, []);
+
+  /* pull in live inventory from the Vendor Portal (Supabase-backed) and
+     merge it with the static catalog — additive, so the app works exactly
+     as before when Supabase isn't configured or no vendor has signed up yet */
+  useEffect(() => {
+    let active = true;
+    Promise.all([fetchAllVendorProps(), fetchAllVendorStores()]).then(([vp, vs]) => {
+      if (!active) return;
+      setVendorProps(vp);
+      setVendorStores(vs);
+    });
+    return () => { active = false; };
+  }, []);
+
+  const allProps = useMemo(() => [...PROPS, ...vendorProps], [vendorProps]);
+  const allStores = useMemo(() => {
+    const merged = [...STORES, ...vendorStores];
+    const withCounts = merged.map((s) =>
+      s.vendor ? { ...s, totalProps: allProps.filter((p) => p.storeId === s.id).length } : s
+    );
+    _registerVendorStores(withCounts.filter((s) => s.vendor));
+    return withCounts;
+  }, [vendorStores, allProps]);
+  const findStore = useCallback((id) => allStores.find((s) => s.id === id), [allStores]);
+  const findProp = useCallback((id) => allProps.find((p) => p.id === id), [allProps]);
   useEffect(() => {
     try { localStorage.setItem(LS_FAVS, JSON.stringify(favs)); } catch {}
   }, [favs]);
@@ -144,6 +172,7 @@ function StoreProvider({ children }) {
     orders, placeOrder, advanceOrder,
     moodboardImages, addMoodboardImages, removeMoodboardImage,
     notifications, unreadCount, markNotificationsRead, clearNotifications,
+    vendorProps, vendorStores, allProps, allStores, findStore, findProp,
   };
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

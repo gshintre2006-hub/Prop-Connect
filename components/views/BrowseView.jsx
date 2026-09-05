@@ -3,12 +3,12 @@
 import { useMemo, useState } from "react";
 import { SlidersHorizontal, Check } from "lucide-react";
 import { C } from "@/lib/tokens";
-import { CATEGORIES, STORES, PROPS } from "@/lib/data";
+import { CATEGORIES } from "@/lib/data";
 import { PropCard } from "@/components/PropCard";
 import { useStore } from "@/app/providers";
 
 export function BrowseView({ initialQuery = "" }) {
-  const { favs, toggleFav, addToCart } = useStore();
+  const { favs, toggleFav, addToCart, allProps, allStores } = useStore();
   const [query] = useState(initialQuery);
   const [cat, setCat] = useState("All");
   const [material, setMaterial] = useState("All");
@@ -16,11 +16,11 @@ export function BrowseView({ initialQuery = "" }) {
   const [avail, setAvail] = useState(false);
   const [sort, setSort] = useState("relevance");
 
-  const materials = useMemo(() => ["All", ...new Set(PROPS.map((p) => p.material))], []);
-  const eras = useMemo(() => ["All", ...new Set(PROPS.map((p) => p.era))], []);
+  const materials = useMemo(() => ["All", ...new Set(allProps.map((p) => p.material))], [allProps]);
+  const eras = useMemo(() => ["All", ...new Set(allProps.map((p) => p.era))], [allProps]);
 
   const results = useMemo(() => {
-    let r = PROPS.filter((p) => {
+    let r = allProps.filter((p) => {
       const q = query.trim().toLowerCase();
       const matchQ = !q || p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q) || p.material.toLowerCase().includes(q);
       const matchCat = cat === "All" || p.category === cat;
@@ -32,14 +32,14 @@ export function BrowseView({ initialQuery = "" }) {
     if (sort === "priceLow") r = [...r].sort((a, b) => a.price - b.price);
     if (sort === "priceHigh") r = [...r].sort((a, b) => b.price - a.price);
     return r;
-  }, [query, cat, material, era, avail, sort]);
+  }, [allProps, query, cat, material, era, avail, sort]);
 
   return (
     <div className="max-w-[1200px] mx-auto px-5 sm:px-6 py-8">
       <div className="mb-6">
         <h1 style={{ color: C.primary, fontFamily: "Jost, sans-serif", fontWeight: 500 }} className="text-2xl mb-1">Browse props</h1>
         <p className="text-sm" style={{ color: "#7C9599" }}>
-          {results.length} results across {STORES.length} stores{query ? ` · “${query}”` : ""}
+          {results.length} results across {allStores.length} stores{query ? ` · “${query}”` : ""}
         </p>
       </div>
 

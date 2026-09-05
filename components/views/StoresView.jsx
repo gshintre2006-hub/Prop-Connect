@@ -3,14 +3,15 @@
 import { useMemo, useState } from "react";
 import { MapPin, Navigation, X, ExternalLink } from "lucide-react";
 import { C } from "@/lib/tokens";
-import { STORES } from "@/lib/data";
 import { haversineKm, fmtKm } from "@/lib/geo";
 import { mapsAreaUrl } from "@/lib/maps";
 import { StoreCard } from "@/components/StoreCard";
+import { useStore } from "@/app/providers";
 
 const RADII = [2, 5, 10, 25];
 
 export function StoresView() {
+  const { allStores: STORES } = useStore();
   const [loc, setLoc] = useState(null);
   const [radius, setRadius] = useState(5);
   const [busy, setBusy] = useState(false);
@@ -42,8 +43,11 @@ export function StoresView() {
 
   const ranked = useMemo(() => {
     if (!loc) return STORES.map((s) => ({ s, km: null }));
-    return STORES.map((s) => ({ s, km: haversineKm(loc, s) })).sort((a, b) => a.km - b.km);
-  }, [loc]);
+    return STORES.map((s) => ({
+      s,
+      km: s.lat != null && s.lng != null ? haversineKm(loc, s) : Infinity,
+    })).sort((a, b) => a.km - b.km);
+  }, [loc, STORES]);
 
   const near = loc ? ranked.filter((x) => x.km <= radius) : null;
   const list = near ?? ranked;

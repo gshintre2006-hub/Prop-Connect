@@ -2,8 +2,12 @@ import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { SUPABASE_URL, SUPABASE_ANON_KEY, isSupabaseConfigured, REQUIRE_AUTH } from "@/lib/supabase/config";
 
-// The only routes reachable while signed out. Everything else needs a session.
+// The only consumer-app routes reachable while signed out. Everything else
+// needs a session (subject to REQUIRE_AUTH below).
 const PUBLIC = ["/login", "/auth"];
+// The Vendor Portal is a separate, always-gated area sharing this same
+// Supabase project/session — only its own login page is reachable signed out.
+const VENDOR_PUBLIC = ["/vendor/login"];
 const OAUTH_JUNK = ["code", "state", "error", "error_code", "error_description"];
 
 export async function middleware(request) {
@@ -56,24 +60,34 @@ export async function middleware(request) {
   // Refreshes the session cookie if needed.
   const { data: { user } } = await supabase.auth.getUser();
 
-  const isPublic = PUBLIC.some((p) => path === p || path.startsWith(`${p}/`));
-  // /account always needs a session; everything else only when REQUIRE_AUTH is on.
-  const gated = REQUIRE_AUTH ? !isPublic : path === "/account" || path.startsWith("/account/");
+  const isVendorRoute = path === "/vendor" || path.startsWith("/vendor/");
+  const loginPath = isVendorRoute ? "/vendor/login" : "/login";
+
+  let gated;
+  if (isVendorRoute) {
+    // The Vendor Portal always needs a session, regardless of REQUIRE_AUTH.
+    gated = !VENDOR_PUBLIC.some((p) => path === p);
+  } else {
+    const isPublic = PUBLIC.some((p) => path === p || path.startsWith(`${p}/`));
+    // /account always needs a session; everything else only when REQUIRE_AUTH is on.
+    gated = REQUIRE_AUTH ? !isPublic : path === "/account" || path.startsWith("/account/");
+  }
 
   // Signed out on a gated route -> send to login, remember where they were headed.
   if (!user && gated) {
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
+    url.pathname = loginPath;
     url.search = "";
     url.searchParams.set("redirectTo", path);
     return NextResponse.redirect(url);
   }
 
-  // Signed in and sitting on /login -> bounce to their destination (or home).
-  if (user && path === "/login") {
+  // Signed in and sitting on a login page -> bounce to their destination.
+  if (user && (path === "/login" || path === "/vendor/login")) {
     const url = request.nextUrl.clone();
     const rt = request.nextUrl.searchParams.get("redirectTo");
-    url.pathname = rt && rt.startsWith("/") ? rt : "/";
+    const home = path === "/vendor/login" ? "/vendor" : "/";
+    url.pathname = rt && rt.startsWith("/") ? rt : home;
     url.search = "";
     return NextResponse.redirect(url);
   }

@@ -5,7 +5,6 @@ import {
   ArrowLeft, Star, MapPin, Phone, MessageCircle, Mail, Clock, Heart,
 } from "lucide-react";
 import { C } from "@/lib/tokens";
-import { PROPS } from "@/lib/data";
 import { Footer } from "@/components/ui";
 import { PropCard } from "@/components/PropCard";
 import { StoreMap } from "@/components/StoreMap";
@@ -13,8 +12,8 @@ import { useStore } from "@/app/providers";
 
 export function StoreDetailView({ store }) {
   const router = useRouter();
-  const { favs, toggleFav, addToCart, favStores, toggleFavStore } = useStore();
-  const items = PROPS.filter((p) => p.storeId === store.id);
+  const { favs, toggleFav, addToCart, favStores, toggleFavStore, allProps } = useStore();
+  const items = allProps.filter((p) => p.storeId === store.id);
   const isFav = favStores.includes(store.id);
 
   return (

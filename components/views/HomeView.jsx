@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { ChevronRight, Star, Search, Heart, Store } from "lucide-react";
 import { C } from "@/lib/tokens";
-import { CATEGORIES, STORES, PROPS, REVIEWS, storeById } from "@/lib/data";
+import { CATEGORIES, REVIEWS } from "@/lib/data";
 import { Pill, SectionTitle, Button, Footer } from "@/components/ui";
 import { PropCard } from "@/components/PropCard";
 import { StoreCard } from "@/components/StoreCard";
@@ -30,13 +30,13 @@ function FloatCard({ children, style, onClick }) {
 
 export function HomeView() {
   const router = useRouter();
-  const { favs, toggleFav, addToCart } = useStore();
-  const trending = PROPS.slice(0, 4);
-  const recent = [...PROPS].reverse().slice(0, 4);
+  const { favs, toggleFav, addToCart, allProps, allStores, findStore } = useStore();
+  const trending = allProps.slice(0, 4);
+  const recent = [...allProps].reverse().slice(0, 4);
   const toBrowse = (q) => router.push(`/browse?q=${encodeURIComponent(q)}`);
 
-  const chairProp = PROPS.find((p) => p.id === "p7") || PROPS[0];
-  const lampProp = PROPS.find((p) => p.id === "p2") || PROPS[1];
+  const chairProp = allProps.find((p) => p.id === "p7") || allProps[0];
+  const lampProp = allProps.find((p) => p.id === "p2") || allProps[1];
 
   return (
     <div>
@@ -117,7 +117,7 @@ export function HomeView() {
                   </div>
                   <div className="min-w-0">
                     <div className="text-sm truncate" style={{ color: C.ink, fontFamily: "Jost, sans-serif", fontWeight: 600 }}>{lampProp.name}</div>
-                    <div className="text-[0.72rem] truncate" style={{ color: "#8AA2A6" }}>{storeById(lampProp.storeId)?.name}</div>
+                    <div className="text-[0.72rem] truncate" style={{ color: "#8AA2A6" }}>{findStore(lampProp.storeId)?.name}</div>
                   </div>
                 </div>
                 <div className="mt-2.5">
@@ -181,7 +181,7 @@ export function HomeView() {
           </button>
         </div>
         <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-16">
-          {STORES.map((s) => <StoreCard key={s.id} s={s} />)}
+          {allStores.map((s) => <StoreCard key={s.id} s={s} />)}
         </div>
 
         {/* How it works */}

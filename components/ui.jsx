@@ -254,7 +254,11 @@ export function Footer() {
           </div>
         ))}
       </div>
-      <div className="text-center text-[0.7rem] py-5" style={{ color: "#A9BABD", borderTop: `1px solid ${C.line}` }}>© 2026 PropConnect. Made for the Indian production design community.</div>
+      <div className="text-center text-[0.7rem] py-5 flex flex-col sm:flex-row items-center justify-center gap-1.5" style={{ color: "#A9BABD", borderTop: `1px solid ${C.line}` }}>
+        <span>© 2026 PropConnect. Made for the Indian production design community.</span>
+        <span className="hidden sm:inline">·</span>
+        <a href="/vendor" style={{ color: C.primary, fontFamily: "Jost, sans-serif", fontWeight: 500 }}>Own a rental store? List it on PropConnect →</a>
+      </div>
     </div>
   );
 }
