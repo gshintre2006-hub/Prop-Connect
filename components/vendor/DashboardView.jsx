@@ -6,7 +6,10 @@ import {
   CalendarCheck, Store, ChevronRight, Package,
 } from "lucide-react";
 import { C } from "@/lib/tokens";
+import { Logo } from "@/components/ui";
 import { useVendorData } from "./VendorDataContext";
+
+const SERIF = "'Playfair Display', Georgia, 'Times New Roman', serif";
 
 const STATUS_LABEL = {
   available: { label: "Available", bg: "#e5f3e8", ink: "#2f7a45" },
@@ -90,6 +93,18 @@ export function DashboardView() {
 
   return (
     <div>
+      <div className="flex items-center gap-3 mb-5">
+        <Logo variant="mark" size={40} />
+        <div>
+          <div className="leading-none text-[1.7rem] sm:text-[2.1rem]" style={{ fontFamily: SERIF, fontWeight: 600, letterSpacing: "-0.01em" }}>
+            <span style={{ color: C.primary }}>Prop</span><span style={{ color: C.highlight }}>Connect</span>
+          </div>
+          <span className="text-[0.62rem] uppercase tracking-[0.15em]" style={{ color: "#8AA2A6", fontFamily: "Jost, sans-serif", fontWeight: 600 }}>
+            Vendor Portal
+          </span>
+        </div>
+      </div>
+
       <div className="flex flex-wrap items-end justify-between gap-3 mb-7">
         <div>
           <h1 className="text-xl mb-1" style={{ color: C.primary, fontFamily: "Jost, sans-serif", fontWeight: 500 }}>

@@ -57,10 +57,15 @@ export function VendorSidebar() {
       className="w-[230px] shrink-0 h-screen sticky top-0 flex flex-col"
       style={{ backgroundColor: C.white, borderRight: `1px solid ${C.line}` }}
     >
-      <div className="flex items-center gap-2 px-5 pt-6 pb-4" style={{ borderBottom: `1px solid ${C.line}` }}>
-        <Logo variant="mark" size={26} />
-        <span style={{ color: C.primary, fontFamily: "Jost, sans-serif", fontWeight: 500 }} className="text-sm">
-          Prop<span style={{ color: C.highlight }}>Connect</span>
+      <div className="flex flex-col gap-1.5 px-5 pt-6 pb-4" style={{ borderBottom: `1px solid ${C.line}` }}>
+        <div className="flex items-center gap-2.5">
+          <Logo variant="mark" size={34} />
+          <span style={{ fontFamily: "Jost, sans-serif", fontWeight: 600 }} className="text-base">
+            <span style={{ color: C.primary }}>Prop</span><span style={{ color: C.highlight }}>Connect</span>
+          </span>
+        </div>
+        <span className="text-[0.62rem] uppercase tracking-[0.15em]" style={{ color: "#8AA2A6", fontFamily: "Jost, sans-serif", fontWeight: 600 }}>
+          Vendor Portal
         </span>
       </div>
 

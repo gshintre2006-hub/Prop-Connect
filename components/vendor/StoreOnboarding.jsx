@@ -38,7 +38,13 @@ export function StoreOnboarding() {
     <div className="min-h-screen w-full flex items-center justify-center px-5 py-12" style={{ backgroundColor: C.bg }}>
       <div className="w-full max-w-[560px]">
         <div className="flex flex-col items-center mb-7">
-          <Logo variant="full" size={100} />
+          <Logo variant="full" size={130} />
+          <span
+            className="mt-3 text-[0.68rem] uppercase tracking-[0.18em] px-3 py-1 rounded-full"
+            style={{ backgroundColor: C.primaryTint, color: C.primary, fontFamily: "Jost, sans-serif", fontWeight: 600 }}
+          >
+            Vendor Portal
+          </span>
         </div>
         <div className="rounded-[24px] p-6 sm:p-8" style={{ backgroundColor: C.white, border: `1px solid ${C.line}`, boxShadow: "0 20px 50px -25px rgba(0,60,75,0.25)" }}>
           <div className="w-11 h-11 rounded-2xl flex items-center justify-center mb-4" style={{ backgroundColor: C.primaryTint }}>

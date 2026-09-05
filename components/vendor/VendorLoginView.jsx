@@ -46,7 +46,7 @@ export function VendorLoginView({ redirectTo = "/vendor", initialError = "" }) {
     <div className="min-h-screen w-full flex items-center justify-center px-5 py-10" style={{ backgroundColor: C.bg }}>
       <div className="w-full max-w-[400px]">
         <div className="flex flex-col items-center mb-7">
-          <Logo variant="full" size={110} />
+          <Logo variant="full" size={148} />
           <span
             className="mt-3 text-[0.68rem] uppercase tracking-[0.18em] px-3 py-1 rounded-full"
             style={{ backgroundColor: C.primaryTint, color: C.primary, fontFamily: "Jost, sans-serif", fontWeight: 600 }}
