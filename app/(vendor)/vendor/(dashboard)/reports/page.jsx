@@ -1,14 +1,7 @@
-import { BarChart3 } from "lucide-react";
-import { EmptyPanel } from "@/components/vendor/EmptyPanel";
+import { ReportsView } from "@/components/vendor/ReportsView";
 
 export const metadata = { title: "Reports · Vendor Portal" };
 
 export default function ReportsPage() {
-  return (
-    <EmptyPanel
-      icon={BarChart3}
-      title="Reports"
-      body="Simple, table-based reports: inventory count, most viewed props, unavailable props and low stock."
-    />
-  );
+  return <ReportsView />;
 }

@@ -1,14 +1,13 @@
-import { Settings } from "lucide-react";
-import { EmptyPanel } from "@/components/vendor/EmptyPanel";
+import { AccountView } from "@/components/views/AccountView";
 
-export const metadata = { title: "Settings · Vendor Portal" };
+export const metadata = { title: "My profile · Vendor Portal" };
 
-export default function SettingsPage() {
+export default function VendorSettingsPage() {
   return (
-    <EmptyPanel
-      icon={Settings}
-      title="Settings"
-      body="Manage your account, notification preferences and access."
+    <AccountView
+      title="My profile"
+      subtitle="This is your personal sign-in profile — the same account you use to manage this store."
+      signOutRedirect="/vendor/login"
     />
   );
 }

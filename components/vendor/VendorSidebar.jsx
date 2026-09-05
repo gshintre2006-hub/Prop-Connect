@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, Boxes, CirclePlus, Upload, Network, CalendarCheck,
-  Store, BarChart3, Settings, LifeBuoy, LogOut,
+  Store, BarChart3, User, LifeBuoy, LogOut,
 } from "lucide-react";
 import { C } from "@/lib/tokens";
 import { Logo } from "@/components/ui";
@@ -21,7 +21,7 @@ const WORKSPACE = [
 const STORE_NAV = [
   { href: "/vendor/store", icon: Store, label: "Store profile" },
   { href: "/vendor/reports", icon: BarChart3, label: "Reports" },
-  { href: "/vendor/settings", icon: Settings, label: "Settings" },
+  { href: "/vendor/settings", icon: User, label: "My Profile" },
   { href: "/vendor/support", icon: LifeBuoy, label: "Support" },
 ];
 

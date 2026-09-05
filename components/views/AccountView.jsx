@@ -50,7 +50,11 @@ function fileToAvatarDataUrl(file) {
   });
 }
 
-export function AccountView() {
+export function AccountView({
+  title = "Your profile",
+  subtitle = "Update how you appear to partner stores.",
+  signOutRedirect = "/login",
+}) {
   const router = useRouter();
   const { user, loading, updateProfile, signOut } = useAuth();
   const fileRef = useRef(null);
@@ -129,14 +133,14 @@ export function AccountView() {
 
   const doSignOut = async () => {
     await signOut();
-    router.push("/login");
+    router.push(signOutRedirect);
     router.refresh();
   };
 
   return (
     <div className="max-w-[640px] mx-auto px-5 sm:px-6 py-10">
-      <h1 className="text-2xl mb-1" style={{ color: C.primary, fontFamily: "Jost, sans-serif", fontWeight: 500 }}>Your profile</h1>
-      <p className="text-sm mb-8" style={{ color: "#7C9599" }}>Update how you appear to partner stores.</p>
+      <h1 className="text-2xl mb-1" style={{ color: C.primary, fontFamily: "Jost, sans-serif", fontWeight: 500 }}>{title}</h1>
+      <p className="text-sm mb-8" style={{ color: "#7C9599" }}>{subtitle}</p>
 
       <div className="rounded-2xl p-6" style={{ backgroundColor: C.white, border: `1px solid ${C.line}` }}>
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={pickPhoto} />

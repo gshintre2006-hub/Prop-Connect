@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Search, CirclePlus, Pencil, Trash2, Boxes } from "lucide-react";
 import { C } from "@/lib/tokens";
 import { CATEGORIES } from "@/lib/data";
@@ -17,9 +17,11 @@ const STATUS_LABEL = {
 
 export function InventoryView() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { rawProps, removeProp } = useVendorData();
   const [q, setQ] = useState("");
-  const [cat, setCat] = useState("All");
+  const initialCat = searchParams.get("category");
+  const [cat, setCat] = useState(initialCat && CATEGORIES.includes(initialCat) ? initialCat : "All");
   const [busyId, setBusyId] = useState("");
 
   const filtered = useMemo(() => {

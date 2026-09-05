@@ -1,14 +1,7 @@
-import { CalendarCheck } from "lucide-react";
-import { EmptyPanel } from "@/components/vendor/EmptyPanel";
+import { AvailabilityView } from "@/components/vendor/AvailabilityView";
 
 export const metadata = { title: "Availability · Vendor Portal" };
 
 export default function AvailabilityPage() {
-  return (
-    <EmptyPanel
-      icon={CalendarCheck}
-      title="Availability"
-      body="Update prop status in one place — available, reserved, out on rent, maintenance or hidden. For now, change status per prop from Inventory → Edit."
-    />
-  );
+  return <AvailabilityView />;
 }
